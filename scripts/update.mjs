@@ -120,12 +120,17 @@ async function rankings(profiles) {
     const url = `${L.CVF}/beachvolejbal/zebricek?rankingItemLister-vp-page=1&rankingItemLister-filter%5BfolderId%5D=2&rankingItemLister-filter%5BrankingId%5D=${code}&rankingItemLister-filter%5Bname%5D=Hn%C3%A1tov%C3%A1`;
     const html = await get(url); if (!html) { abv.failed = true; continue; }
     const r = L.parsePvsRanking(html, parseHTML); // same 4-column shape: #, name, club, points
-    for (const row of r.rows) if (L.isGirl(row.name)) (abv[L.girlName(row.name)] ||= []).push({ cat, code, rank: row.rank, points: row.points, url });
+    for (const row of r.rows) if (L.isGirl(row.name)) (abv[L.girlName(row.name)] ||= []).push({ cat, code, rank: row.rank, points: row.points, url, detail: row.href ? new URL(row.href, L.CVF).href : null });
   }
   const out = JSON.parse(JSON.stringify(profiles));
   for (const p of out.players) {
     if (!pvs.failed) p.pvs = pvs[p.name] || [];
-    if (!abv.failed) p.abv = abv[p.name] || [];
+    if (!abv.failed) {
+      p.abv = (abv[p.name] || []).map(({ detail, ...r }) => r);
+      // profile link = her youngest ABV category she still plays (Helena: U18, not U16)
+      const own = (abv[p.name] || []).filter(r => !(L.ABV_EXCLUDE[p.name] || []).includes(r.code) && r.detail).sort((a, b) => L.ABV_ORDER.indexOf(a.code) - L.ABV_ORDER.indexOf(b.code));
+      if (own.length) p.cvfUrl = own[0].detail;
+    }
   }
   if (!pvs.failed || !abv.failed) out.asOf = today;
   return out;

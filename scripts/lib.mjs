@@ -172,9 +172,13 @@ export const girlsCategory = c => /^U(10|12|14|16|18|20)/i.test(c) && !/M$/i.tes
 
 // season ranking /beach/result/{id}?type=A : rows [#, name, club, points]
 export function parsePvsRanking(html, parseHTML) {
-  const d = parseHTML(html); const rows = [...d.querySelectorAll('table tr')].slice(1).map(tr => [...tr.querySelectorAll('td')].map(txt)).filter(r => r.length >= 4);
-  return { of: rows.length, rows: rows.map(r => ({ rank: int(r[0]), name: r[1], club: r[2], points: num(r[3]) })) };
+  const d = parseHTML(html);
+  const rows = [...d.querySelectorAll('table tr')].slice(1).map(tr => { const tds = [...tr.querySelectorAll('td')]; const a = tds[1] && tds[1].querySelector('a'); return { c: tds.map(txt), href: a ? a.getAttribute('href') : null }; }).filter(r => r.c.length >= 4);
+  return { of: rows.length, rows: rows.map(({ c, href }) => ({ rank: int(c[0]), name: c[1], club: c[2], points: num(c[3]), href })) };
 }
+// ABV categories a girl no longer plays (hidden in the app, never used for her profile link)
+export const ABV_EXCLUDE = { 'Helena Hnátová': ['ZKY'] };
+export const ABV_ORDER = ['ZKY', 'KKY', 'JKY', 'Z'];
 
 /* =============== ČVS (cvf.cz) =============== */
 
