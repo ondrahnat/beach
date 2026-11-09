@@ -1,0 +1,3 @@
+# Sem lze vložit odkazy na turnaje, které automatika sama nenajde (jeden odkaz na řádek).
+# Například oblastní ABV turnaj mimo Prahu:
+# https://www.cvf.cz/beachvolejbal/turnaje?tournamentId=1234

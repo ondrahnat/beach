@@ -1,0 +1,7 @@
+{
+  "name": "hnatova-beach-draw",
+  "private": true,
+  "type": "module",
+  "scripts": { "update": "node scripts/update.mjs data.json" },
+  "dependencies": { "linkedom": "0.18.5" }
+}

@@ -1,0 +1,812 @@
+<!doctype html>
+<html lang="cs"><head><meta charset="utf-8"><title>Hnátová Beach Draw</title><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Rozlosování, skupiny, play-off a výsledky beachvolejbalových turnajů Heli a Maky Hnátových.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%23FFD23F%22 stroke=%22%2310202B%22 stroke-width=%223%22/%3E%3C/svg%3E">
+<style>body{margin:0}[hidden]{display:none!important}</style>
+</head><body>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: one column like the tournament board at the venue; sticky top bar, filters + tournament list, then a tournament detail (her day, final standings, groups as cross tables, bracket). */
+:root{
+  --bg:#F3F6F8; --surface:#FFFFFF; --sunk:#E7EDF1; --line:#D3DDE4;
+  --ink:#10202B; --muted:#5A6B77;
+  --accent:#1652C8; --accent-ink:#FFFFFF; --mark:#FFD23F; --mark-ink:#2A2100; --mark-soft:#FFF4C7;
+  --win:#13804A; --loss:#B4372B; --proj:#7A5AC8;
+  --display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --body:"Figtree",system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0C151C; --surface:#13202A; --sunk:#0F1A22; --line:#24343F;
+  --ink:#E6EEF3; --muted:#93A6B3;
+  --accent:#6E9CFF; --accent-ink:#06142E; --mark:#FFD23F; --mark-ink:#2A2100; --mark-soft:#3A3212;
+  --win:#4CC98A; --loss:#F07C6E; --proj:#B69CFF; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0C151C; --surface:#13202A; --sunk:#0F1A22; --line:#24343F;
+  --ink:#E6EEF3; --muted:#93A6B3;
+  --accent:#6E9CFF; --accent-ink:#06142E; --mark:#FFD23F; --mark-ink:#2A2100; --mark-soft:#3A3212;
+  --win:#4CC98A; --loss:#F07C6E; --proj:#B69CFF; color-scheme:dark}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.45}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--surface)}
+.wrap{max-width:900px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 48px}
+header.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--surface);border-bottom:1px solid var(--line)}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px;padding-block:9px}
+.brand{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink);text-decoration:none;background:none;border:0;cursor:pointer;padding:0}
+.ball{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%,var(--mark) 0 66%,var(--surface) 0);border:2px solid var(--ink)}
+.topright{display:flex;align-items:center;gap:10px}
+.topbtn{display:inline-flex;text-decoration:none;align-items:center;gap:6px;font-size:13px;padding:6px 11px;white-space:nowrap}
+.topbtn:disabled{opacity:.6;cursor:default}
+.topbtn .ri{font-size:15px;line-height:1}
+.updated{font-size:12px;color:var(--muted);text-align:right}
+.lang{display:inline-flex;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.lang button{display:flex;align-items:center;gap:5px;border:0;background:transparent;color:var(--muted);font:inherit;font-size:12px;font-weight:700;padding:5px 8px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--sunk);color:var(--ink)}
+.lang svg{width:18px;height:12px;border-radius:2px;box-shadow:0 0 0 1px var(--line)}
+h1,h2,h3{font-family:var(--display);font-weight:700;text-wrap:balance;margin:0;letter-spacing:.01em}
+h2{font-size:22px;text-transform:uppercase}
+h3{font-size:18px}
+.eyebrow{font-size:11px;text-transform:uppercase;letter-spacing:.09em;color:var(--muted);font-weight:600}
+.note{font-size:13px;color:var(--muted);max-width:70ch;margin:0}
+.profiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,330px),1fr));gap:12px;padding-top:16px}
+.prof{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:14px;display:grid;grid-template-columns:76px 1fr;gap:12px 14px;align-items:start}
+.prof .ph{width:76px;height:76px;border-radius:50%;overflow:hidden;background:var(--mark);color:var(--mark-ink);display:grid;place-items:center;font-family:var(--display);font-weight:700;font-size:30px;border:3px solid var(--mark)}
+.prof .ph img{width:100%;height:100%;object-fit:cover;display:block}
+.prof h2{font-size:24px;line-height:1.05}
+.prof .sub{font-size:12px;color:var(--muted)}
+.prof .rk{grid-column:1/-1;display:grid;gap:4px}
+.prof table{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.prof th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:4px 6px}
+.prof td{padding:5px 6px;border-top:1px solid var(--line)}
+.prof td.r{font-family:var(--display);font-weight:700;font-size:17px;white-space:nowrap}
+.prof td.r small{font-family:var(--body);font-weight:500;font-size:11px;color:var(--muted)}
+.prof a{color:var(--accent)}
+.asof{font-size:12px;color:var(--muted)}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding-block:16px 6px}
+.filters label{display:grid;gap:4px}
+.filters select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink)}
+.count{font-size:13px;color:var(--muted);padding-block:6px}
+.tlist{display:grid;gap:8px}
+.trow{display:grid;grid-template-columns:76px 1fr auto;gap:12px;align-items:center;text-align:left;width:100%;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
+.trow:hover{border-color:var(--accent)}
+.trow .d{font-family:var(--display);font-weight:700;font-size:17px;line-height:1.05}
+.trow .d small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--muted)}
+.trow .n{min-width:0}
+.trow .n b{display:block;font-family:var(--display);font-size:18px;font-weight:600;line-height:1.15}
+.trow .n span{font-size:12px;color:var(--muted)}
+.trow .who{display:flex;flex-direction:column;gap:4px;align-items:flex-end}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border-radius:999px;padding:3px 9px;border:1px solid var(--line);background:var(--surface);white-space:nowrap}
+.pill.official{border-color:var(--win);color:var(--win)}
+.pill.proj{border-color:var(--proj);color:var(--proj)}
+.pill.live{background:var(--loss);border-color:var(--loss);color:#fff}
+.pill.her{background:var(--mark);border-color:var(--mark);color:var(--mark-ink)}
+.pill.series{background:var(--sunk);border-color:var(--sunk)}
+.pill.chipwrap{white-space:normal;text-align:right;line-height:1.3;max-width:100%}
+.pill.chipwrap b{font-weight:700}
+button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.back{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;padding:14px 0 0;cursor:pointer}
+.hero{display:grid;gap:6px;padding-block:10px 8px}
+.hero h1{font-size:34px;line-height:1.05;text-transform:uppercase}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14px;align-items:center}
+.meta a{color:var(--accent)}
+.toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding-block:8px}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);flex-wrap:wrap}
+.seg button{font:inherit;font-size:13px;font-weight:600;border:0;background:transparent;color:var(--muted);padding:7px 12px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+.seg button:disabled{opacity:.45;cursor:default}
+section.block{display:grid;gap:12px;padding-block:18px;border-top:1px solid var(--line);margin-top:10px}
+.herbox{background:var(--surface);border:2px solid var(--mark);border-radius:14px;padding:14px;display:grid;gap:12px;margin-top:10px}
+.herbox .who{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 12px}
+.herbox .who b{font-family:var(--display);font-size:24px;font-weight:700}
+.timeline{display:grid;gap:6px}
+.tl{display:grid;grid-template-columns:62px 1fr auto;gap:10px;align-items:center;padding:8px 10px;border-radius:10px;background:var(--sunk)}
+.tl .rd{font-family:var(--display);font-weight:700;font-size:15px;color:var(--muted);line-height:1.1}
+.tl .rd small{display:block;font-family:var(--body);font-weight:500;font-size:11px}
+.tl .vs{min-width:0}
+.tl .vs .opp{font-weight:600}
+.tl .vs .sub{font-size:12px;color:var(--muted)}
+.res{font-family:var(--display);font-weight:700;font-size:18px;font-variant-numeric:tabular-nums;text-align:right;white-space:nowrap}
+.res.w{color:var(--win)} .res.l{color:var(--loss)} .res.p{color:var(--muted);font-size:14px;font-weight:600}
+.paths{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:8px}
+.path{border:1px dashed var(--line);border-radius:10px;padding:8px 10px;font-size:13px}
+.path b{font-family:var(--display);font-size:16px;display:block}
+.groups{display:grid;grid-template-columns:1fr;gap:14px}
+.group{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.group.mine{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
+.group header{display:flex;justify-content:space-between;align-items:center;padding:10px 12px;border-bottom:1px solid var(--line)}
+.group header h3{font-size:22px}
+.xscroll{overflow-x:auto}
+.xt{border-collapse:collapse;width:100%;min-width:520px;font-size:12.5px;font-variant-numeric:tabular-nums}
+.xt th,.xt td{border:1px solid var(--line);padding:6px;vertical-align:middle;text-align:center}
+.xt thead th{font-weight:600;line-height:1.2;width:15%}
+.xt th[scope="row"]{text-align:left;font-weight:500;line-height:1.25;width:24%}
+.xt .corner{font-family:var(--display);font-size:16px;text-transform:uppercase;width:24%}
+.xt .pn{display:block}
+.xt .club{display:block;color:var(--muted);font-size:11px}
+.xt .no{display:inline-block;font-family:var(--display);font-weight:700;font-size:13px;color:var(--muted);margin-bottom:2px}
+.xt th[scope="row"] .no{float:right;margin-left:6px}
+.xt td.diag{background:repeating-linear-gradient(135deg,var(--line) 0 2px,var(--sunk) 2px 7px)}
+.xt td.none{background:var(--sunk)}
+.xt td.cell b{display:block;font-family:var(--display);font-size:17px}
+.xt td.cell small{display:block;color:var(--muted);font-size:11px}
+.xt td.cell.w b{color:var(--win)} .xt td.cell.l b{color:var(--loss)}
+.xt td.todo .rr{color:var(--muted);font-size:11px}
+.xt td.todo.her{background:var(--mark-soft)}
+.xt tr.mine th[scope="row"],.xt th.mine{background:var(--mark-soft)}
+.xt tr.mine td.cell{box-shadow:inset 0 0 0 9999px color-mix(in srgb,var(--mark) 10%,transparent)}
+.xt .sum{color:var(--muted);width:7%}
+.xt .rank{font-family:var(--display);font-weight:700;font-size:18px;width:7%}
+.order{display:flex;flex-wrap:wrap;align-items:center;gap:6px;padding:10px 12px;border-top:1px solid var(--line)}
+.ord{font-family:var(--display);font-weight:600;font-size:15px;padding:1px 8px;border-radius:6px;border:1px solid var(--line);color:var(--muted)}
+.ord.done{color:var(--ink);background:var(--sunk)}
+.ord.her{border-color:var(--mark);box-shadow:inset 0 0 0 1px var(--mark)}
+.bracket-scroll{overflow-x:auto;padding-bottom:6px}
+.bracket{display:grid;gap:14px}
+.bcol{display:flex;flex-direction:column;justify-content:space-around;gap:10px;min-width:0}
+.bcol h4{margin:0 0 2px;font-family:var(--display);font-size:14px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.bm{background:var(--surface);border:1px solid var(--line);border-radius:10px;font-size:13px;overflow:hidden}
+.bm.mine{border-color:var(--mark);box-shadow:0 0 0 1px var(--mark)}
+.bm .row{display:grid;grid-template-columns:1fr auto;gap:6px;padding:6px 9px;align-items:center}
+.bm .row+.row{border-top:1px solid var(--line)}
+.bm .row.won{font-weight:700}
+.bm .row.mine{background:var(--mark-soft)}
+.bm .row .slot{color:var(--proj);font-weight:600}
+.bm .foot{font-size:11px;color:var(--muted);padding:3px 9px;background:var(--sunk)}
+.bm .s{font-variant-numeric:tabular-nums;color:var(--muted)}
+.places{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,250px),1fr));gap:10px}
+.tbl{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.tbl th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);font-weight:600;text-align:left;padding:6px 8px}
+.tbl td{padding:6px 8px;border-top:1px solid var(--line)}
+.tbl td:first-child{font-family:var(--display);font-weight:700;font-size:15px;white-space:nowrap;width:64px}
+.tbl tr.mine td{background:var(--mark-soft)}
+.tbl .club{display:block;color:var(--muted);font-size:11px}
+.empty{background:var(--surface);border:1px dashed var(--line);border-radius:12px;padding:18px;display:grid;gap:6px}
+.admin{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px;display:grid;gap:10px}
+.admin form{display:flex;flex-wrap:wrap;gap:8px}
+.admin input{flex:1 1 260px;min-width:0;font:inherit;padding:9px 11px;border:1px solid var(--line);border-radius:9px;background:var(--bg);color:var(--ink)}
+.btn{font:inherit;font-weight:600;border:0;border-radius:9px;padding:9px 14px;background:var(--accent);color:var(--accent-ink);cursor:pointer}
+.btn.ghost{background:var(--sunk);color:var(--ink)}
+.reqs{list-style:none;margin:0;padding:0;display:grid;gap:4px;font-size:13px}
+.reqs li{display:flex;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:4px}
+.reqs li span:first-child{min-width:0;overflow-wrap:anywhere}
+@media (max-width:560px){.hero h1{font-size:26px}.tl{grid-template-columns:52px 1fr auto}.trow{grid-template-columns:58px 1fr}.trow .who{grid-column:1/-1;flex-direction:row;flex-wrap:wrap;justify-content:flex-start}.trow .pill.chipwrap{text-align:left}.updated{display:none}
+ .brand{font-size:16px;white-space:nowrap;gap:5px;letter-spacing:0}.ball{width:15px;height:15px}.lang .lt{display:none}.topbtn .rt{display:none}.topbtn{padding:6px 8px}.lang button{padding:6px 5px}.topright{gap:6px}header.top .wrap{gap:6px}
+ .filters{grid-template-columns:1fr 1fr;gap:8px}.filters select{padding:7px 8px;font-size:13px}
+ .prof{grid-template-columns:60px 1fr;padding:12px}.prof .ph{width:60px;height:60px;font-size:22px}.prof h2{font-size:22px}
+ .xt{min-width:0;font-size:12px}.xt .sum{display:none}.xt thead th .pn{display:none}.xt thead th .no{font-size:15px;margin:0}.xt .corner{font-size:13px;width:auto}
+ .xt th[scope="row"]{width:auto}.xt th[scope="row"] .pn,.xt th[scope="row"] .club{display:none}.xt th[scope="row"] .sn{display:block}.xt th[scope="row"] .no{float:none;margin:0 4px 0 0;display:inline}
+ .xt th,.xt td{padding:5px 3px}.xt td.cell b{font-size:15px}.xt td.cell small{font-size:10px}.xt .rank{font-size:16px}
+ .bracket{grid-template-columns:1fr!important;min-width:0!important}.bracket-scroll{overflow-x:visible}.bcol{justify-content:flex-start}
+ .herbox{padding:12px}.herbox .who b{font-size:21px}.paths{grid-template-columns:1fr}}
+.xt .sn{display:none;font-weight:600}
+.fulllist{margin-top:6px}.fulllist summary{cursor:pointer;color:var(--accent);font-weight:600;font-size:14px;padding:6px 0}
+@media (prefers-reduced-motion:no-preference){.seg button,.trow{transition:background .15s,border-color .15s}}
+</style>
+
+<header class="top"><div class="wrap">
+  <button class="brand" id="home" type="button"><span class="ball" aria-hidden="true"></span>Hnátová Beach Draw</button>
+  <div class="topright">
+    <div class="updated" id="updated"></div>
+    <a class="btn topbtn" id="ownerLink" href="https://claude.ai/artifact/BroEFXWcTXYNxhiq57D9ve" target="_blank" rel="noopener" hidden><span class="ri" aria-hidden="true">↻</span><span class="rt" id="ownerLinkTxt"></span></a>
+    <button class="btn topbtn" type="button" id="refreshTop" hidden><span class="ri" aria-hidden="true">↻</span><span class="rt" id="refreshTopTxt"></span></button>
+    <div class="lang" role="group" aria-label="Jazyk / Language">
+      <button type="button" data-lang="cs" aria-pressed="true"><svg viewBox="0 0 6 4" aria-hidden="true"><rect width="6" height="2" fill="#fff"/><rect y="2" width="6" height="2" fill="#D7141A"/><path d="M0 0 3 2 0 4z" fill="#11457E"/></svg><span class="lt">CZ</span></button>
+      <button type="button" data-lang="en" aria-pressed="false"><svg viewBox="0 0 60 40" aria-hidden="true"><rect width="60" height="40" fill="#012169"/><path d="M0 0 60 40M60 0 0 40" stroke="#fff" stroke-width="8"/><path d="M0 0 60 40M60 0 0 40" stroke="#C8102E" stroke-width="3"/><path d="M30 0v40M0 20h60" stroke="#fff" stroke-width="12"/><path d="M30 0v40M0 20h60" stroke="#C8102E" stroke-width="7"/></svg><span class="lt">EN</span></button>
+    </div>
+  </div>
+</div></header>
+
+<main class="wrap">
+  <div id="view"></div>
+  <section class="block" id="adminBlock" hidden>
+    <div class="admin">
+      <div class="eyebrow" data-i18n="addTitle"></div>
+      <form id="addForm">
+        <label for="linkInput" class="note" style="flex-basis:100%" data-i18n="addHelp"></label>
+        <input id="linkInput" type="url" required placeholder="https://www.volejbalpraha.cz/beach/detail/…">
+        <button class="btn" type="submit" data-i18n="addBtn"></button>
+        <button class="btn ghost" type="button" id="refreshBtn" data-i18n="refreshBtn"></button>
+      </form>
+      <p class="note" data-i18n="refreshHelp"></p>
+      <div id="addMsg" class="note" role="status"></div>
+      <div id="queueInfo" class="note"></div>
+      <ul class="reqs" id="reqList"></ul>
+    </div>
+  </section>
+</main>
+
+<script id="engine">
+/* ================= Draw engine (pure functions, no DOM) ================= */
+// "X" = scratched / walkover side on the PVS boards (e.g. "X:2")
+function parseSets(s){if(!s)return null;const m=String(s).match(/(\d+|X)\s*:\s*(\d+|X)/i);if(!m)return null;const xa=/x/i.test(m[1]),xb=/x/i.test(m[2]);if(xa&&xb)return null;if(xa)return [0,Math.max(1,+m[2])];if(xb)return [Math.max(1,+m[1]),0];return [+m[1],+m[2]]}
+function parsePoints(p){if(!p)return [0,0];let a=0,b=0;for(const m of String(p).matchAll(/(\d+)\s*:\s*(\d+)/g)){a+=+m[1];b+=+m[2]}return [a,b]}
+function winLose(m){if(!m||!m.a||!m.b)return null;const s=parseSets(m.sets);if(!s)return null;return s[0]>s[1]?{w:m.a,l:m.b}:{w:m.b,l:m.a}}
+// Group table: wins, then for ties a small table (sets ratio, balls ratio), then big table sets ratio, balls ratio.
+function standings(teamKeys,matches){
+  const st=Object.fromEntries(teamKeys.map(k=>[k,{key:k,played:0,won:0,lost:0,sw:0,sl:0,pw:0,pl:0}]));
+  const done=matches.filter(m=>parseSets(m.sets)&&st[m.a]&&st[m.b]);
+  for(const m of done){const [sa,sb]=parseSets(m.sets),[pa,pb]=parsePoints(m.points);const A=st[m.a],B=st[m.b];
+    A.played++;B.played++;A.sw+=sa;A.sl+=sb;B.sw+=sb;B.sl+=sa;A.pw+=pa;A.pl+=pb;B.pw+=pb;B.pl+=pa;if(sa>sb){A.won++;B.lost++}else{B.won++;A.lost++}}
+  const ratio=(w,l)=>l===0?(w===0?0:1e9):w/l;
+  const mini=keys=>{const set=new Set(keys);const t=Object.fromEntries(keys.map(k=>[k,{sw:0,sl:0,pw:0,pl:0}]));
+    for(const m of done){if(set.has(m.a)&&set.has(m.b)){const [sa,sb]=parseSets(m.sets),[pa,pb]=parsePoints(m.points);t[m.a].sw+=sa;t[m.a].sl+=sb;t[m.b].sw+=sb;t[m.b].sl+=sa;t[m.a].pw+=pa;t[m.a].pl+=pb;t[m.b].pw+=pb;t[m.b].pl+=pa}}return t};
+  const byWins={};for(const r of Object.values(st))(byWins[r.won]??=[]).push(r);
+  const out=[];
+  for(const w of Object.keys(byWins).map(Number).sort((a,b)=>b-a)){const tied=byWins[w];
+    if(tied.length>1){const t=mini(tied.map(r=>r.key));
+      tied.sort((x,y)=>ratio(t[y.key].sw,t[y.key].sl)-ratio(t[x.key].sw,t[x.key].sl)||ratio(t[y.key].pw,t[y.key].pl)-ratio(t[x.key].pw,t[x.key].pl)||ratio(y.sw,y.sl)-ratio(x.sw,x.sl)||ratio(y.pw,y.pl)-ratio(x.pw,x.pl))}
+    out.push(...tied)}
+  const complete=matches.length>0&&matches.every(m=>!m.a||!m.b||parseSets(m.sets));
+  return {rows:out,complete};
+}
+
+/* ---- Pražská beachliga (volejbalpraha.cz) ---- */
+// 4 groups, snake A 1,8,9,16 / B 2,7,10,15 / C 3,6,11,14 / D 4,5,12,13; order inside a group by position: 2-4, 1-3, 2-3, 1-4, 4-3, 1-2
+// (both verified against the published boards).
+const G4_ORDER=[[2,4],[1,3],[2,3],[1,4],[4,3],[1,2]];
+function snake(n,groups,rows){const out=groups.map(g=>({name:g,slots:[]}));let s=1;
+  for(let r=0;r<rows;r++){const order=r%2===0?[...out.keys()]:[...out.keys()].reverse();
+    for(const i of order){out[i].slots.push(s<=n?s:null);s++}}return out}
+function roundRobin(k){const p=[...Array(k).keys()].map(i=>i+1);if(k%2)p.push(null);const m=p.length,res=[];
+  for(let r=0;r<m-1;r++){const rd=[];for(let i=0;i<m/2;i++){const a=p[i],b=p[m-1-i];if(a&&b)rd.push([a,b])}res.push(rd);p.splice(1,0,p.pop())}return res}
+function pvsLayout(n){
+  if(n<=5) return {kind:'rr',groups:[{name:'A',slots:[...Array(n).keys()].map(i=>i+1)}],orderEstimated:true,playoff:null};
+  if(n<=8) return {kind:'g2',groups:snake(n,['A','B'],4),orderEstimated:false,playoff:'8T-2G'};
+  if(n<=16) return {kind:'g4',groups:snake(n,['A','B','C','D'],4),orderEstimated:false,playoff:'12T-4G'};
+  if(n<=20) return {kind:'g4x5',groups:snake(n,['A','B','C','D'],5),orderEstimated:true,playoff:'12T-4G'};
+  return {kind:'g8',groups:snake(n,['A','B','C','D','E','F','G','H'],Math.ceil(n/8)),orderEstimated:true,playoff:'24T-8G'};
+}
+function groupSchedule(layout,g){const sl=g.slots;
+  if(layout.kind==='g4'||layout.kind==='g2') return G4_ORDER.map(([x,y],i)=>({round:i+1,a:sl[x-1],b:sl[y-1]})).filter(m=>m.a&&m.b);
+  const live=sl.filter(Boolean);return roundRobin(live.length).flatMap((rd,i)=>rd.map(([x,y])=>({round:i+1,a:live[x-1],b:live[y-1]})));
+}
+// 12T-4G playoff key (verified against the U18Ž and U14Ž boards of 10. 10. 2026). Stage values are i18n keys.
+function playoff12(withFifth){
+  const g=(grp,pos)=>({g:grp,pos}),W=id=>({w:id}),L=id=>({l:id});
+  const t=[
+   {id:'R12-1',round:7,col:0,stage:'r12',a:g('D',3),b:g('C',2)},{id:'R12-2',round:7,col:0,stage:'r12',a:g('A',3),b:g('B',2)},
+   {id:'R12-3',round:7,col:0,stage:'r12',a:g('B',3),b:g('A',2)},{id:'R12-4',round:7,col:0,stage:'r12',a:g('C',3),b:g('D',2)},
+   {id:'QF-1',round:8,col:1,stage:'qf',a:g('A',1),b:W('R12-1')},{id:'QF-2',round:8,col:1,stage:'qf',a:g('D',1),b:W('R12-2')},
+   {id:'QF-3',round:8,col:1,stage:'qf',a:g('C',1),b:W('R12-3')},{id:'QF-4',round:8,col:1,stage:'qf',a:g('B',1),b:W('R12-4')},
+   {id:'SF-1',round:12,col:2,stage:'sf',a:W('QF-1'),b:W('QF-2')},{id:'SF-2',round:12,col:2,stage:'sf',a:W('QF-3'),b:W('QF-4')},
+   {id:'F',round:15,col:3,stage:'f',a:W('SF-1'),b:W('SF-2')},{id:'B3',round:15,col:3,stage:'b3',a:L('SF-1'),b:L('SF-2')},
+   {id:'P58-1',round:12,stage:'p58',a:L('QF-1'),b:L('QF-2')},{id:'P58-2',round:13,stage:'p58',a:L('QF-3'),b:L('QF-4')},
+   {id:'P5',round:15,stage:'p5',a:W('P58-1'),b:W('P58-2')},{id:'P7',round:16,stage:'p7',a:L('P58-1'),b:L('P58-2')},
+   {id:'P912-1',round:13,stage:'p912',a:L('R12-1'),b:L('R12-2')},{id:'P912-2',round:13,stage:'p912',a:L('R12-3'),b:L('R12-4')},
+   {id:'P9',round:16,stage:'p9',a:W('P912-1'),b:W('P912-2')},{id:'P11',round:16,stage:'p11',a:L('P912-1'),b:L('P912-2')}];
+  if(!withFifth)t.push({id:'P1316-1',round:13,stage:'p1316',a:g('A',4),b:g('D',4)},{id:'P1316-2',round:14,stage:'p1316',a:g('B',4),b:g('C',4)},
+   {id:'P13',round:16,stage:'p13',a:W('P1316-1'),b:W('P1316-2')},{id:'P15',round:17,stage:'p15',a:L('P1316-1'),b:L('P1316-2')});
+  else t.push({id:'P1320-1',round:13,stage:'p1320',a:g('A',4),b:g('D',5),est:true},{id:'P1320-2',round:13,stage:'p1320',a:g('D',4),b:g('A',5),est:true},
+   {id:'P1320-3',round:14,stage:'p1320',a:g('B',4),b:g('C',5),est:true},{id:'P1320-4',round:14,stage:'p1320',a:g('C',4),b:g('B',5),est:true});
+  return t;
+}
+function playoff8(){const g=(grp,pos)=>({g:grp,pos}),W=id=>({w:id}),L=id=>({l:id});
+  return [{id:'SF-1',round:7,col:2,stage:'sf',a:g('A',1),b:g('B',2)},{id:'SF-2',round:7,col:2,stage:'sf',a:g('B',1),b:g('A',2)},
+   {id:'F',round:9,col:3,stage:'f',a:W('SF-1'),b:W('SF-2')},{id:'B3',round:9,col:3,stage:'b3',a:L('SF-1'),b:L('SF-2')},
+   {id:'P5',round:8,stage:'p5',a:g('A',3),b:g('B',3),est:true},{id:'P7',round:8,stage:'p7',a:g('A',4),b:g('B',4),est:true}]}
+function stageToId(stage,no){const s=(stage||'').toLowerCase();
+  if(/osmifin/.test(s))return 'R12-'+no; if(/čtvrtfin/.test(s))return 'QF-'+no; if(/semifin/.test(s))return 'SF-'+no;
+  if(/o 1\. místo/.test(s))return 'F'; if(/o 3\. místo/.test(s))return 'B3';
+  if(/5\. až 8/.test(s))return 'P58-'+no; if(/9\. až 12/.test(s))return 'P912-'+no; if(/13\. až 16/.test(s))return 'P1316-'+no;
+  const m=s.match(/o (\d+)\. místo/); if(m)return 'P'+m[1]; return null}
+function resolvePlayoff(tpl,groupStand,official){
+  const res={};const offById={};
+  for(const o of official||[]){const id=stageToId(o.stage,o.no);if(id&&!offById[id])offById[id]=o}
+  const ref=r=>{if(r.g){const gs=groupStand[r.g];if(!gs||!gs.complete)return {label:r.pos+r.g};const row=gs.rows[r.pos-1];return row?{team:row.key,label:r.pos+r.g}:{label:'–',bye:true}}
+    const id=r.w||r.l;const m=res[id];const lab={w:r.w,l:r.l};if(!m)return {ref:lab};const wl=winLose(m.match);
+    if(!wl){if(m.byeWinner&&r.w)return {team:m.byeWinner,ref:lab};if(m.byeWinner&&r.l)return {label:'–',bye:true};return {ref:lab}}
+    return {team:r.w?wl.w:wl.l,ref:lab}};
+  for(const t of tpl){const A=ref(t.a),B=ref(t.b);const o=offById[t.id];
+    const match={a:o?.a??A.team??null,b:o?.b??B.team??null,sets:o?.sets??null,points:o?.points??null,court:o?.court??null,round:o?.round??t.round};
+    let byeWinner=null;if(A.bye&&B.team)byeWinner=B.team;if(B.bye&&A.team)byeWinner=A.team;
+    res[t.id]={t,A,B,match,official:!!o,byeWinner}}
+  return res;
+}
+function finalStandings(po){
+  const f=po&&po.F&&parseSets(po.F.match.sets);if(!f)return null;const out=[];
+  for(const [id,pl] of [['F',1],['B3',3],['P5',5],['P7',7],['P9',9],['P11',11],['P13',13],['P15',15]]){
+    const r=po[id];if(!r)continue;const m=r.match;const s=parseSets(m.sets);
+    if(s){const aw=s[0]>s[1];const w=aw?m.a:m.b,l=aw?m.b:m.a;if(w)out.push({place:pl,to:pl,key:w});if(l)out.push({place:pl+1,to:pl+1,key:l})}
+    else{for(const k of [m.a,m.b])if(k)out.push({place:pl,to:pl+1,key:k})}}
+  return out;
+}
+// Official final order from the league points the board publishes after the event (equal points = shared place)
+function pointsFinal(teams,leagueName){const known=teams.filter(t=>typeof t.points==='number');if(!known.length||!known.some(t=>t.points>0))return null;
+  if(known.length===teams.length)return teams.map(t=>{const above=teams.filter(x=>x.points>t.points).length,same=teams.filter(x=>x.points===t.points).length;return {key:t.key,place:above+1,to:above+same,pts:t.points}});
+  // only some pairs known: place from the league points table (base - 2 per place)
+  const n=+((leagueName||'').match(/(\d+)/)||[0,1])[1];const base=100-10*(n-1);
+  return known.filter(t=>t.points>0).map(t=>{const pl=Math.round((base-t.points)/2)+1;const same=known.filter(x=>x.points===t.points).length;return {key:t.key,place:pl,to:pl+same-1,pts:t.points}})}
+// League points: Liga 1 from 100, each lower league 10 less, minus 2 per place (verified against both boards).
+function pvsPoints(leagueName,place){const n=+((leagueName||'').match(/(\d+)/)||[0,1])[1];return Math.max(0,100-10*(n-1)-2*(place-1))}
+
+/* ---- ČVS / ABV models (sheet match numbers M1..Mn; verified against the organizers' sheets) ---- */
+function cvfTemplate(system,opts={}){
+  const s=n=>({s:n}),W=id=>({w:id}),L=id=>({l:id}),g=(x,p)=>({g:x,pos:p}),M=n=>'M'+n;
+  if(system==='cvf-h16-skupmod'){ // H16-skupmod-1KO, Karlovy Vary U18Ž 8. 8. 2026
+    const G=[['A',[1,8,9,16],[1,2,9,11]],['B',[4,5,12,13],[3,4,10,12]],['C',[3,6,11,14],[5,6,14,16]],['D',[2,7,10,15],[7,8,13,15]]];
+    const groups=[],m=[];
+    for(const [name,sl,ids] of G){const [i1,i2,iw,il]=ids.map(M);
+      groups.push({name,slots:sl,kind:'mod',w:iw,l:il,ids:[i1,i2,iw,il]});
+      m.push({id:i1,grp:name,lab:'1-4',a:s(sl[0]),b:s(sl[3])},{id:i2,grp:name,lab:'2-3',a:s(sl[1]),b:s(sl[2])},
+             {id:iw,grp:name,lab:'W',a:W(i1),b:W(i2)},{id:il,grp:name,lab:'L',a:L(i1),b:L(i2)})}
+    m.sort((x,y)=>+x.id.slice(1)-+y.id.slice(1));
+    const ko=(n,col,st,a,b,extra={})=>({id:M(n),sec:'ko',col,stage:st,a,b,...extra});
+    m.push(ko(17,0,'r12',g('D',2),g('B',3),{out:9}),ko(18,0,'r12',g('C',2),g('A',3),{out:9}),ko(19,0,'r12',g('B',2),g('D',3),{out:9}),ko(20,0,'r12',g('A',2),g('C',3),{out:9}),
+      ko(21,1,'qf',g('A',1),W(M(17)),{out:5}),ko(22,1,'qf',g('B',1),W(M(18)),{out:5}),ko(23,1,'qf',g('C',1),W(M(19)),{out:5}),ko(24,1,'qf',g('D',1),W(M(20)),{out:5}),
+      ko(25,2,'sf',W(M(21)),W(M(22))),ko(26,2,'sf',W(M(23)),W(M(24))),
+      ko(27,3,'b3',L(M(25)),L(M(26)),{place:[3,4]}),ko(28,3,'f',W(M(25)),W(M(26)),{place:[1,2]}));
+    return {system,size:16,groups,matches:m,groupOut:{4:13},sections:[{key:'ko',title:'playoff',cols:['r12','qf','sf','medals']}]};
+  }
+  if(system==='cvf-h24-2ko'){ // H24-2KO, Pardubice U16Ž 16. 5. 2026 and MČR U16Ž 26. 6. 2026
+    const m=[];const add=(n,sec,col,st,a,b,extra={})=>m.push({id:M(n),sec,col,stage:st,a,b,...extra});
+    [[16,17],[9,24],[21,12],[13,20],[14,19],[11,22],[23,10],[15,18]].forEach(([x,y],i)=>add(i+1,'win',0,'w1',s(x),s(y)));
+    [1,8,5,4,3,6,7,2].forEach((x,i)=>add(9+i,'win',1,'w2',W(M(i+1)),s(x)));
+    for(let i=0;i<8;i++)add(17+i,'lose',0,'l1',L(M(8-i)),L(M(9+i)),{out:17});
+    for(let i=0;i<4;i++)add(25+i,'win',2,'w3',W(M(9+2*i)),W(M(10+2*i)));
+    for(let i=0;i<4;i++)add(29+i,'lose',1,'l2',W(M(17+2*i)),W(M(18+2*i)),{out:13});
+    [[29,27],[30,28],[31,25],[32,26]].forEach(([x,y],i)=>add(33+i,'lose',2,'l3',W(M(x)),L(M(y)),{out:9}));
+    add(37,'win',3,'w4',W(M(25)),W(M(26)));add(38,'win',3,'w4',W(M(27)),W(M(28)));
+    add(39,'lose',3,'l4',W(M(34)),W(M(33)),{out:7});add(40,'lose',3,'l4',W(M(36)),W(M(35)),{out:7});
+    add(41,'lose',4,'l5',L(M(37)),W(M(39)),{out:5});add(42,'lose',4,'l5',L(M(38)),W(M(40)),{out:5});
+    add(43,'fin',0,'sf',W(M(38)),W(M(41)));add(44,'fin',0,'sf',W(M(37)),W(M(42)));
+    add(45,'fin',1,'b3',L(M(43)),L(M(44)),{place:[3,4]});add(46,'fin',1,'f',W(M(43)),W(M(44)),{place:[1,2]});
+    return {system,size:24,groups:[],matches:m,groupOut:{},sections:[{key:'win',title:'winBracket',cols:['w1','w2','w3','w4']},{key:'lose',title:'loseBracket',cols:['l1','l2','l3','l4','l5']},{key:'fin',title:'finals',cols:['sf','medals']}]};
+  }
+  if(system==='cvf-q18'){ // Q18-skup-1KO, Pardubice U16Ž 15. 5. 2026: 6 groups of 3, 1st vs 2nd crossover, 6 qualify
+    const names=['A','B','C','D','E','F'];const main=opts.mainSize||24;
+    const groups=names.map((name,i)=>({name,slots:[i+1,12-i,18-i],kind:'rr',ids:[M(1+i),M(7+i),M(13+i)]}));
+    const m=[];
+    groups.forEach((G,i)=>m.push({id:M(1+i),grp:G.name,lab:'2-3',a:s(G.slots[1]),b:s(G.slots[2])}));
+    groups.forEach((G,i)=>m.push({id:M(7+i),grp:G.name,lab:'1-3',a:s(G.slots[0]),b:s(G.slots[2])}));
+    groups.forEach((G,i)=>m.push({id:M(13+i),grp:G.name,lab:'1-2',a:s(G.slots[0]),b:s(G.slots[1])}));
+    [['A','B'],['B','A'],['C','D'],['D','C'],['E','F'],['F','E']].forEach(([x,y],i)=>m.push({id:M(19+i),sec:'ko',col:0,stage:'qk',a:g(x,1),b:g(y,2),out:main+1,qualify:true}));
+    return {system,size:18,groups,matches:m,groupOut:{3:main+7},sections:[{key:'ko',title:'qualKo',cols:['qk']}]};
+  }
+  return null;
+}
+function resolveTpl(tpl,teams,official,trustOfficialTeams=true){
+  const bySeed={};for(const t of teams)bySeed[t.seed]=t.key;
+  const off={};for(const o of (official&&official.matches)||[])off[o.tid||('M'+o.no)]=o;
+  const res={};const grp=Object.fromEntries(tpl.groups.map(g=>[g.name,g]));
+  const positions=name=>{const G=grp[name];if(!G)return null;
+    if(G.kind==='mod'){const w=res[G.w]&&winLose(res[G.w].match),l=res[G.l]&&winLose(res[G.l].match);return w&&l?[w.w,w.l,l.w,l.l]:null}
+    const ms=G.ids.map(id=>res[id]&&res[id].match).filter(m=>m&&m.a&&m.b);const keys=G.slots.map(x=>bySeed[x]).filter(Boolean);
+    const st=standings(keys,ms);return st.complete&&ms.length?st.rows.map(r=>r.key):null};
+  const ref=r=>{
+    if(r.s!==undefined)return bySeed[r.s]?{team:bySeed[r.s],ref:r}:{ref:r,bye:true};
+    if(r.g){const p=positions(r.g);return p&&p[r.pos-1]?{team:p[r.pos-1],ref:r}:{ref:r}}
+    const m=res[r.w||r.l];const wl=m&&winLose(m.match);if(!wl)return {ref:r};return {team:r.w?wl.w:wl.l,ref:r}};
+  for(const t of tpl.matches){const A=ref(t.a),B=ref(t.b);const o=off[t.id];
+    const use=o&&trustOfficialTeams;
+    const match={a:use?o.a:(A.team||null),b:use?o.b:(B.team||null),sets:o?o.sets:null,points:o?o.points:null,court:o?o.court:null,date:o?o.date:null,time:o?o.time:null,round:o?o.round:null,no:+t.id.slice(1)};
+    res[t.id]={t,A,B,match,official:!!o}}
+  return {res,positions};
+}
+// Final places: losers of a match with `out` share that place; medal matches give [winner, loser]; group positions with groupOut.
+function cvfFinal(tpl,R){
+  const out=[];const outCount={};
+  for(const t of tpl.matches){if(t.out)outCount[t.out]=(outCount[t.out]||0)+1}
+  for(const [pos,pl] of Object.entries(tpl.groupOut||{}))outCount[pl]=(outCount[pl]||0)+tpl.groups.length;
+  for(const t of tpl.matches){const r=R.res[t.id];const wl=winLose(r.match);
+    if(t.place&&wl){out.push({key:wl.w,place:t.place[0],to:t.place[0]},{key:wl.l,place:t.place[1],to:t.place[1]})}
+    if(t.out&&wl)out.push({key:wl.l,place:t.out,to:t.out+outCount[t.out]-1});
+    if(t.qualify&&wl)out.push({key:wl.w,place:null,q:true})}
+  for(const [pos,pl] of Object.entries(tpl.groupOut||{}))for(const G of tpl.groups){const p=R.positions(G.name);if(p&&p[pos-1])out.push({key:p[pos-1],place:pl,to:pl+outCount[pl]-1})}
+  return out;
+}
+if(typeof module!=='undefined')module.exports={pointsFinal,parseSets,standings,pvsLayout,groupSchedule,playoff12,playoff8,resolvePlayoff,stageToId,finalStandings,pvsPoints,cvfTemplate,resolveTpl,cvfFinal,winLose};
+</script>
+
+<script>
+/* ================= i18n ================= */
+const I18N={
+ cs:{all:'Vše',player:'Hráčka',series:'Soutěž',category:'Kategorie',season:'Sezóna',both:'Obě',
+  s_pbl:'Pražská beachliga',s_leto:'Letní pražská beachliga',s_abv:'ABV + MČR',
+  found:n=>`${n} ${n===1?'turnaj':n<5&&n>1?'turnaje':'turnajů'}`,none:'Žádný turnaj neodpovídá filtru.',
+  back:'← Všechny turnaje',updated:'Aktualizováno',source:'Zdroj',sheet:'Online rozpis',
+  upcoming:'Nadcházející',live:'Právě se hraje',finished:'Odehráno',official:'Oficiální los',projected:'Předpověď podle klíče',
+  showOfficial:'Oficiální',showProj:'Předpověď',pairs:'párů',of:'z',registered:'přihlášených',
+  herDay:'Její turnaj',seed:'nasazení',group:'Skupina',inGroup:'ve skupině',finalPlace:'Konečné pořadí',pts:'b.',
+  matchesAppear:'Zápasy se objeví po zveřejnění losu.',toPlay:'hraje se',court:'kurt',round:'kolo',
+  afterGroups:'Kam po skupině',nth:p=>`${p}. ve skupině`,vs:'proti',winnerOf:'vítěz',loserOf:'poražený',
+  ifWin:'Při výhře',ifLoss:'Při prohře',next:'Další zápas',out:'konec v turnaji, místo',qualified:'postup do hlavní soutěže',
+  standings:'Konečné pořadí',standingsNote:'Podle zápasů play-off a o umístění. Kde se zápas o umístění nehrál, je místo dělené.',
+  pointsNote:l=>` Body podle tabulky Pražské beachligy pro ${l}.`,place:'Místo',pair:'Pár',points:'Body',
+  groups:'Skupiny',sets:'Sety',balls:'Míče',order:'Pořadí',final:'Konečné',inPlay:'Hraje se',
+  orderEst:n=>`Pro ${n} párů svaz nezveřejňuje pořadí zápasů ve skupině, níže je standardní každý s každým. Rozdělení do skupin odpovídá klíči.`,
+  playoff:'Play-off',placement:'Zápasy o umístění',slotNote:'2C = 2. ze skupiny C, V/P = vítěz/poražený zápasu. Jména se doplní podle výsledků.',
+  slotNoteOff:'Jména podle zveřejněných výsledků, volná místa ukazují, kdo je doplní.',
+  noPlayoff:{skup:'Pavouk se zobrazí, až ho pořadatel zveřejní.','24T-8G':'Klíč pro 24členný pavouk není zveřejněný. Pavouk se zobrazí, až ho pořadatel zveřejní.',none:'Jedna skupina, bez play-off.'},
+  seeded:'Nasazené páry',index:'Index',entry:'Vstupní body',est:'odhad',
+  r12:'Osmifinále',qf:'Čtvrtfinále',sf:'Semifinále',f:'Finále',b3:'O 3. místo',medals:'Medaile',p58:'O 5.–8. místo',p5:'O 5. místo',p7:'O 7. místo',p912:'O 9.–12. místo',p9:'O 9. místo',p11:'O 11. místo',p1316:'O 13.–16. místo',p13:'O 13. místo',p15:'O 15. místo',p1320:'O 13.–20. místo',
+  w1:'Kolo I',w2:'Kolo II',w3:'Kolo III',w4:'Kolo IV',l1:'O 17. místo',l2:'O 13. místo',l3:'O 9. místo',l4:'O 7. místo',l5:'O 5. místo',qk:'Rozhodující zápasy',
+  winBracket:'Pavouk vítězů',loseBracket:'Pavouk poražených (druhá šance)',finals:'Semifinále a medaile',qualKo:'Kvalifikace – zápasy o postup',
+  W:'V',L:'P',seedRef:n=>`nasazený ${n}`,addTitle:'Přidat turnaj',addHelp:'Vlož odkaz na turnaj z volejbalpraha.cz nebo cvf.cz. Claude za pár minut načte páry, los i výsledky.',
+  addBtn:'Přidat turnaj',refreshBtn:'Obnovit výsledky',refreshHelp:'Obnovit výsledky: dopíše výsledky a body holek za posledních 14 dní, na 14 dní dopředu najde turnaje, kam jsou holky přihlášené (Pražská beachliga i ČVS), a znovu načte jejich přihlášené páry, nasazení, divoké karty a los. Aktualizuje i žebříčky. Jiný turnaj přidáte vložením odkazu.',refreshShort:'Obnovit',ownerHint:'Obnovit data (jen pro správce, otevře verzi v Claude)',reloadHint:'Načíst nejnovější data. Aktualizují se samy, o víkendech každých 15 minut.',refreshBusyShort:'Načítá se…',badLink:'Použij odkaz z volejbalpraha.cz nebo cvf.cz.',saveFail:'Nepodařilo se uložit. Turnaje může přidávat jen vlastník stránky.',
+  starting:'Spouštím aktualizaci…',loadingAdd:'Načítám turnaj. Obvykle to trvá pár minut, stránka se obnoví sama.',loadingRefresh:'Stahuji nejnovější los a výsledky. Stránka se obnoví sama.',
+  kickFail:'Uloženo, ale aktualizaci se odsud nepodařilo spustit. Povol pro tuto stránku konektor Claude Code Remote (Oprávnění) a klikni na Obnovit výsledky.',
+  st:{pending:'ve frontě',working:'načítá se…',done:'načteno',error:'nepodařilo se načíst'},refreshJob:'Obnovit výsledky',
+  prof_pvs:'Pražská beachliga (zimní 2026/27)',prof_abv:'Žebříček ABV (národní)',prof_cat:'Kategorie',prof_rank:'Pořadí',prof_pts:'Body',asOf:d=>`Žebříčky k ${d}`,ofN:n=>`z ${n}`,profile:'profil',
+  leagueN:n=>`${n}. liga`,showAll:n=>`Zobrazit celé pořadí (${n})`,noResult:'umístění zatím nezveřejněno',
+  queue:n=>`Ve frontě čeká ${n} turnajů. Jedno kliknutí na Obnovit výsledky načte dalších asi 8.`,
+  busy:n=>`Probíhá aktualizace, obvykle 5 až 20 minut. Tlačítko se znovu zapne, až doběhne, a stránka se obnoví sama.`,
+  noData:'Data se nepodařilo načíst. Zkus stránku znovu načíst za minutu.',qualif:'Kvalifikace',main:'Hlavní soutěž',stage:'Část',
+  notReg:'Holky zatím nejsou přihlášené.',seedNote:'Nasazení je dopočítané z rozlosování (web po turnaji přeřadí seznam podle výsledku).',
+  tieNote:'Pořadí ve skupině podle pravidel PVS (malá tabulka). U ČVS skupin jde o stejný výpočet, pravidla ČVS pro shody nejsou ověřená.'},
+ en:{all:'All',player:'Player',series:'Competition',category:'Category',season:'Season',both:'Both',
+  s_pbl:'Prague beach league',s_leto:'Prague summer beach league',s_abv:'ABV + national champs',
+  found:n=>`${n} tournament${n===1?'':'s'}`,none:'No tournament matches the filter.',
+  back:'← All tournaments',updated:'Updated',source:'Source',sheet:'Online sheet',
+  upcoming:'Upcoming',live:'Live',finished:'Finished',official:'Official draw',projected:'Projected from seeding key',
+  showOfficial:'Official',showProj:'Projection',pairs:'pairs',of:'of',registered:'registered',
+  herDay:'Her tournament',seed:'seed',group:'Group',inGroup:'in group',finalPlace:'Final place',pts:'pts',
+  matchesAppear:'Matches appear once the draw is out.',toPlay:'to play',court:'court',round:'round',
+  afterGroups:'Where she goes after the group',nth:p=>`${p}${['st','nd','rd'][p-1]||'th'} in group`,vs:'vs',winnerOf:'winner of',loserOf:'loser of',
+  ifWin:'If she wins',ifLoss:'If she loses',next:'Next match',out:'out of the tournament, place',qualified:'into the main draw',
+  standings:'Final standings',standingsNote:'From the playoff and placement matches. Where a placement match was not played the place is shared.',
+  pointsNote:l=>` Points follow the Prague beach league table for ${l}.`,place:'Place',pair:'Pair',points:'Points',
+  groups:'Groups',sets:'Sets',balls:'Points',order:'Order',final:'Final',inPlay:'In play',
+  orderEst:n=>`For ${n} pairs the federation does not publish the match order inside groups, so the order below is a standard round robin. Group allocation follows the seeding key.`,
+  playoff:'Playoff',placement:'Placement matches',slotNote:'2C = 2nd in group C, W/L = winner/loser of that match. Names fill in as results come in.',
+  slotNoteOff:'Names come from the published results; open slots show who will fill them.',
+  noPlayoff:{skup:'The bracket appears when the organizer publishes it.','24T-8G':'The 24-team bracket key is not published. The bracket appears when the organizer publishes it.',none:'Single group, no playoff.'},
+  seeded:'Seeded pairs',index:'Index',entry:'Entry points',est:'estimated',
+  r12:'Round of 12',qf:'Quarterfinal',sf:'Semifinal',f:'Final',b3:'3rd place',medals:'Medals',p58:'Places 5–8',p5:'5th place',p7:'7th place',p912:'Places 9–12',p9:'9th place',p11:'11th place',p1316:'Places 13–16',p13:'13th place',p15:'15th place',p1320:'Places 13–20',
+  w1:'Round I',w2:'Round II',w3:'Round III',w4:'Round IV',l1:'For 17th',l2:'For 13th',l3:'For 9th',l4:'For 7th',l5:'For 5th',qk:'Deciding matches',
+  winBracket:'Winners bracket',loseBracket:'Losers bracket (second chance)',finals:'Semifinals and medals',qualKo:'Qualification deciders',
+  W:'W',L:'L',seedRef:n=>`seed ${n}`,addTitle:'Add a tournament',addHelp:'Paste the tournament link from volejbalpraha.cz or cvf.cz. Claude loads the pairs, the draw and results in a few minutes.',
+  addBtn:'Add tournament',refreshBtn:'Refresh results',refreshHelp:'Refresh results: fills in the girls\' results and points from the last 14 days, finds tournaments in the next 14 days the girls are registered for (Prague league and ČVS) and reloads their registered pairs, seeding, wild cards and draw. Also updates the rankings. Add any other tournament by pasting its link.',refreshShort:'Refresh',ownerHint:'Refresh data (admin only, opens the Claude version)',reloadHint:'Load the latest data. They update automatically, every 15 minutes at weekends.',refreshBusyShort:'Loading…',badLink:'Use a link from volejbalpraha.cz or cvf.cz.',saveFail:'Could not save. Only the page owner can add tournaments.',
+  starting:'Starting the update…',loadingAdd:'Loading the tournament. It usually takes a few minutes; the page refreshes by itself.',loadingRefresh:'Fetching the latest draw and results. The page refreshes by itself.',
+  kickFail:'Saved, but the update could not be started from here. Allow the Claude Code Remote connector for this page (Permissions), then tap Refresh results.',
+  st:{pending:'queued',working:'loading…',done:'loaded',error:'could not load'},refreshJob:'Refresh results',
+  prof_pvs:'Prague beach league (winter 2026/27)',prof_abv:'ABV ranking (national)',prof_cat:'Category',prof_rank:'Rank',prof_pts:'Points',asOf:d=>`Rankings as of ${d}`,ofN:n=>`of ${n}`,profile:'profile',
+  leagueN:n=>`League ${n}`,showAll:n=>`Show full standings (${n})`,noResult:'place not published yet',
+  queue:n=>`${n} tournaments are queued. One tap on Refresh results loads about 8 more.`,
+  busy:n=>`An update is running, usually 5 to 20 minutes. The button turns back on when it finishes and the page reloads by itself.`,
+  noData:'The data could not be loaded. Reload the page in a minute.',qualif:'Qualification',main:'Main draw',stage:'Stage',
+  notReg:'The girls are not registered yet.',seedNote:'Seed order reconstructed from the draw (the site re-sorts the list by result after the event).',
+  tieNote:'Group order by the PVS rules (small table). ČVS groups use the same calculation; the ČVS tie rules are not verified.'}};
+let LANG='cs';try{LANG=localStorage.getItem('lang')||'cs'}catch{}
+const T=(k,...a)=>{const v=(I18N[LANG]||I18N.cs)[k];return typeof v==='function'?v(...a):(v??k)};
+function applyStatic(){document.documentElement.lang=LANG;document.querySelectorAll('[data-i18n]').forEach(e=>e.textContent=T(e.dataset.i18n));
+  document.querySelectorAll('[data-lang]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.lang===LANG?'true':'false'));
+  const rb=document.getElementById('refreshTop');if(rb){const b=rb.disabled;document.getElementById('refreshTopTxt').textContent=b?T('refreshBusyShort'):T('refreshShort');rb.title=b?T('busy',0):T('refreshHelp');rb.setAttribute('aria-label',b?T('refreshBusyShort'):T('refreshBtn'))}}
+
+/* ================= App ================= */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+let DATA=null,cur=null,mode='auto',leagueSel={};
+let F={player:'all',series:'all',cat:'all',season:'all'};try{Object.assign(F,JSON.parse(localStorage.getItem('filters')||'{}'))}catch{}
+const loc=()=>LANG==='cs'?'cs-CZ':'en-GB';
+const fmtDate=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(loc(),{day:'numeric',month:'numeric',year:'numeric'})}catch{return d}};
+const fmtDay=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(loc(),{weekday:'short'})}catch{return ''}};
+
+const FIRST=p=>p.split(' ')[0];
+function focusOf(team){if(!team||!DATA)return null;const names=[team.p1,team.p2].map(x=>(x||'').toLowerCase());return DATA.players.filter(p=>names.includes(p.toLowerCase()))}
+function focusKeys(league){return league.teams.filter(t=>(focusOf(t)||[]).length).map(t=>t.key)}
+function seriesOf(t){if(t.series)return t.series;if(t.source==='cvf')return 'abv';return /letní/i.test(t.name)?'leto':'pbl'}
+function seasonOf(t){const d=new Date(t.date+'T12:00:00');if(seriesOf(t)==='pbl'){const y=d.getMonth()>=7?d.getFullYear():d.getFullYear()-1;return `${y}/${String(y+1).slice(2)}`}return String(d.getFullYear())}
+function catOf(t){return (t.category||'').replace('Ž','').replace('Z','')}
+function playersIn(t){const out=new Set();for(const l of t.leagues)for(const tm of l.teams)for(const p of (focusOf(tm)||[]))out.add(p);return [...out]}
+const isCvf=l=>(l.system||'').startsWith('cvf-');
+function statusOf(t){const today=new Date().toISOString().slice(0,10);if(t.date<today&&t.status!=='upcoming')return 'finished';if(t.date<today&&t.status==='upcoming'&&t.leagues&&t.leagues.length)return 'finished';return t.status}
+
+/* ---- build a league model (PVS or ČVS) ---- */
+function buildPvs(t,league,forceProj){
+  const n=league.teams.length;const bySeed=Object.fromEntries(league.teams.map(x=>[x.seed,x]));const byKey=Object.fromEntries(league.teams.map(x=>[x.key,x]));
+  const off=league.official&&league.official.groups&&league.official.groups.length&&!forceProj?league.official:null;
+  const layout=pvsLayout(n);let groups;
+  if(off)groups=off.groups.map(g=>({name:g.name,teams:g.teams.filter(Boolean),matches:(g.matches||[]).map(m=>({...m}))}));
+  else groups=layout.groups.map(g=>({name:g.name,teams:g.slots.filter(Boolean).map(s=>bySeed[s]?.key).filter(Boolean),
+      matches:groupSchedule(layout,g).map(m=>({round:m.round,a:bySeed[m.a]?.key,b:bySeed[m.b]?.key,sets:null,points:null,court:null}))}));
+  const stand={};for(const g of groups)stand[g.name]=standings(g.teams,g.matches.filter(m=>byKey[m.a]&&byKey[m.b]));
+  let tpl=null;if(layout.playoff==='12T-4G'&&groups.length===4)tpl=playoff12(layout.kind==='g4x5');if(layout.playoff==='8T-2G'&&groups.length===2)tpl=playoff8();
+  const po=tpl?resolvePlayoff(tpl,stand,off?.playoff):null;
+  const groupViews=groups.map(g=>{const pos=Object.fromEntries(g.teams.map((k,i)=>[k,i+1]));
+    return {name:g.name,teams:g.teams,matches:g.matches.filter(m=>pos[m.a]&&pos[m.b]).map(m=>({...m,lab:pos[m.a]+'-'+pos[m.b]})),rank:stand[g.name],kind:'rr'}});
+  const ko=po?Object.values(po).map(r=>({id:r.t.id,t:r.t,A:r.A,B:r.B,match:r.match})):[];
+  const fin=po?finalStandings(po):null;const pf=pointsFinal(league.teams,league.name);
+  return {kind:'pvs',n,layout,byKey,groups:groupViews,ko,tpl,official:!!off,officialPlayoff:off?.playoff||[],final:pf||(fin?fin.map(r=>({...r,pts:pvsPoints(league.name,r.place)})):null),
+    hasOfficial:!!(league.official&&league.official.groups&&league.official.groups.length)};
+}
+function buildCvf(t,league,forceProj){
+  const byKey=Object.fromEntries(league.teams.map(x=>[x.key,x]));
+  const mainL=t.leagues.find(l=>l.system&&l.system!=='cvf-q18');
+  const tpl=cvfTemplate(league.system,{mainSize:mainL?cvfTemplate(mainL.system)?.size:24});
+  const hasOff=!!(league.official&&league.official.matches&&league.official.matches.length);
+  if(!tpl)return {kind:'cvf-raw',byKey,groups:[],ko:[],official:hasOff,hasOfficial:hasOff,raw:league.official?.matches||[]};
+  const R=resolveTpl(tpl,league.teams,forceProj?null:league.official);
+  const groupViews=tpl.groups.map(G=>{const keys=G.slots.map(s=>league.teams.find(x=>x.seed===s)?.key).filter(Boolean);
+    const ms=G.ids.map(id=>({...R.res[id].match,lab:tpl.matches.find(m=>m.id===id).lab,id}));
+    const p=R.positions(G.name);const rank=G.kind==='mod'?{mod:true,order:p,rows:keys.map(k=>({key:k})),complete:!!p}:standings(keys,ms.filter(m=>m.a&&m.b));
+    return {name:G.name,teams:keys,matches:ms,rank,kind:G.kind}});
+  const ko=tpl.matches.filter(m=>m.sec).map(m=>({id:m.id,t:m,A:R.res[m.id].A,B:R.res[m.id].B,match:R.res[m.id].match}));
+  const fin=cvfFinal(tpl,R);
+  const done=tpl.matches.some(m=>m.place&&winLose(R.res[m.id].match))||league.system==='cvf-q18'&&ko.every(k=>winLose(k.match));
+  return {kind:'cvf',tpl,R,byKey,groups:groupViews,ko,official:hasOff&&!forceProj,hasOfficial:hasOff,final:done?fin:null,
+    allMatches:tpl.matches.map(m=>({id:m.id,t:m,match:R.res[m.id].match}))};
+}
+function build(t,league,forceProj){return isCvf(league)?buildCvf(t,league,forceProj):buildPvs(t,league,forceProj)}
+
+/* ---- labels ---- */
+function refLabel(r){if(!r)return '';if(r.s!==undefined)return '#'+r.s;if(r.g)return r.pos+r.g;if(r.w)return T('W')+' '+r.w;if(r.l)return T('L')+' '+r.l;return ''}
+function teamName(L,k){const tm=L.byKey[k];return tm?`${esc(tm.p1)} / ${esc(tm.p2)}`:esc(k||'')}
+function placeTxt(r){if(r.q)return 'Q';return r.place===r.to?r.place+'.':r.place+'.–'+r.to+'.'}
+function whenTxt(m){const bits=[];if(m.date)bits.push(esc(m.date));if(m.time)bits.push(esc(m.time));return bits.join(' ')}
+
+// Rankings a player is no longer eligible for (Helena aged out of U16)
+const ABV_EXCLUDE={'Helena Hnátová':['ZKY']};
+const FAMILY={'Helena Hnátová':{nick:'Heli',photo:'photo-heli.jpg'},'Markéta Hnátová':{nick:'Maky',photo:'photo-maky.jpg'}};
+function profilesView(){
+  const P=DATA.profiles;if(!P||!P.players)return '';
+  const card=p=>{const ini=p.name.split(' ').map(x=>x[0]).join('');const fam=FAMILY[p.name]||{};const photo=fam.photo||p.photo;
+    const ph=photo?`<img src="${esc(photo)}" alt="${esc(p.name)}">`:esc(ini);
+    const rows=(arr,showOf)=>arr.map(r=>`<tr><td><a href="${esc(r.url)}" target="_blank" rel="noopener">${esc(r.cat)}</a></td><td class="r">${r.rank}.${showOf&&r.of?` <small>${T('ofN',r.of)}</small>`:''}</td><td>${esc(r.points)}</td></tr>`).join('');
+    const tbl=(title,arr,showOf,link)=>arr&&arr.length?`<div class="eyebrow">${title} · <a href="${esc(link)}" target="_blank" rel="noopener">${T('profile')} ↗</a></div><table><thead><tr><th>${T('prof_cat')}</th><th>${T('prof_rank')}</th><th>${T('prof_pts')}</th></tr></thead><tbody>${rows(arr,showOf)}</tbody></table>`:'';
+    return `<article class="prof"><div class="ph">${ph}</div><div><h2>${esc(fam.nick||p.name)}</h2><div class="sub">${fam.nick?esc(p.name)+' · ':''}${esc(p.club||'')}</div></div>
+      <div class="rk">${tbl(T('prof_pvs'),p.pvs,true,p.pvsUrl)}${tbl(T('prof_abv'),(p.abv||[]).filter(r=>!(ABV_EXCLUDE[p.name]||[]).includes(r.code)),false,p.cvfUrl)}</div></article>`};
+  return `<div class="profiles">${P.players.map(card).join('')}</div><div class="asof">${T('asOf',fmtDate(P.asOf))}</div>`;
+}
+/* ---- list view ---- */
+function listView(){
+  const all=DATA.tournaments;
+  const opts=(arr,cur)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('');
+  const cats=[...new Set(all.map(catOf))].filter(Boolean).sort();
+  const seasons=[...new Set(all.map(seasonOf))].sort().reverse();
+  const players=DATA.players;
+  const pass=t=>(F.player==='all'||playersIn(t).includes(F.player))&&(F.series==='all'||seriesOf(t)===F.series)&&(F.cat==='all'||catOf(t)===F.cat)&&(F.season==='all'||seasonOf(t)===F.season);
+  const today=new Date().toISOString().slice(0,10);
+  const list=all.filter(pass).sort((a,b)=>{const ua=a.date>=today,ub=b.date>=today;if(ua!==ub)return ua?-1:1;return ua?a.date.localeCompare(b.date):b.date.localeCompare(a.date)});
+  let h=profilesView()+`<div class="filters">
+    <label><span class="eyebrow">${T('player')}</span><select id="fPlayer">${opts([['all',T('both')],...players.map(p=>[p,p])],F.player)}</select></label>
+    <label><span class="eyebrow">${T('series')}</span><select id="fSeries">${opts([['all',T('all')],['pbl',T('s_pbl')],['leto',T('s_leto')],['abv',T('s_abv')]],F.series)}</select></label>
+    <label><span class="eyebrow">${T('category')}</span><select id="fCat">${opts([['all',T('all')],...cats.map(c=>[c,c])],F.cat)}</select></label>
+    <label><span class="eyebrow">${T('season')}</span><select id="fSeason">${opts([['all',T('all')],...seasons.map(s=>[s,s])],F.season)}</select></label>
+  </div><div class="count">${T('found',list.length)}</div><div class="tlist">`;
+  if(!list.length)h+=`<div class="empty"><p class="note">${T('none')}</p></div>`;
+  for(const t of list){
+    const chips=[];
+    for(const lg of t.leagues){const fks=focusKeys(lg);if(!fks.length)continue;let L=null;try{L=build(t,lg,false)}catch{}
+      for(const k of fks){const tm=lg.teams.find(x=>x.key===k);const who=(focusOf(tm)||[]).map(FIRST).join(' + ');
+        const fr=L&&L.final&&L.final.find(r=>r.key===k);
+        const fn=(focusOf(tm)||[]).map(x=>x.toLowerCase());const partner=[tm.p1,tm.p2].find(x=>!fn.includes((x||'').toLowerCase()));
+        const ln=(lg.name||'').match(/(\d+)/);const lgTxt=t.source==='pvs'&&ln?T('leagueN',ln[1]):(lg.system==='cvf-q18'?T('qualif'):'');
+        if(lg.system==='cvf-q18'&&fr&&fr.q)continue;
+        if(/kvalifikace/i.test(lg.name||'')&&t.leagues.some(o=>o!==lg&&o.teams.some(x=>x.key===k)))continue;
+        const bits=[lgTxt,fr?placeTxt(fr):''].filter(Boolean).join(' · ');
+        const pend=!fr&&statusOf(t)==='finished'&&lg.teams.length?' · '+T('noResult'):'';
+        chips.push(`<span class="pill her chipwrap"><b>${esc(who)}</b>${partner?' + '+esc(partner):''}${bits?' · '+esc(bits):''}${pend}</span>`)}}
+    if(!t.leagues.length)chips.push(`<span class="pill">${T('notReg')}</span>`);
+    const sx=statusOf(t);const st=sx==='live'?`<span class="pill live">${T('live')}</span>`:sx==='upcoming'?`<span class="pill">${T('upcoming')}</span>`:'';
+    h+=`<button type="button" class="trow" data-id="${esc(t.id)}"><span class="d">${fmtDate(t.date)}<small>${esc(fmtDay(t.date))}</small></span>
+      <span class="n"><b>${esc(t.name)}</b><span>${esc(t.round||'')}${t.round?' · ':''}${esc(t.venue||'')} · ${T('s_'+seriesOf(t))}</span></span>
+      <span class="who">${st}${chips.join('')}</span></button>`}
+  h+='</div>';
+  $('#view').innerHTML=h;
+  const bind=(id,key)=>$(id).addEventListener('change',e=>{F[key]=e.target.value;try{localStorage.setItem('filters',JSON.stringify(F))}catch{};listView()});
+  bind('#fPlayer','player');bind('#fSeries','series');bind('#fCat','cat');bind('#fSeason','season');
+  document.querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.id}));
+}
+
+/* ---- detail view ---- */
+function detailView(t){
+  const fkAll=new Set(t.leagues.flatMap(focusKeys));
+  const defLeague=t.leagues.findIndex(l=>focusKeys(l).length&&(isCvf(l)?(l.system!=='cvf-q18'||!t.leagues.some(x=>x!==l&&focusKeys(x).length)):true));
+  const li=leagueSel[t.id]??(defLeague>=0?defLeague:0);const league=t.leagues[li];
+  let h=`<button class="back" type="button" id="backBtn">${T('back')}</button>`;
+  const sx=statusOf(t);const statusPill=sx==='live'?`<span class="pill live">${T('live')}</span>`:sx==='finished'?`<span class="pill">${T('finished')}</span>`:`<span class="pill">${T('upcoming')}</span>`;
+  h+=`<div class="hero"><div class="eyebrow">${esc(T('s_'+seriesOf(t)))} · ${esc(t.round||'')} · ${esc(t.category||'')}</div><h1>${esc(t.name)}</h1>
+    <div class="meta"><span>${fmtDate(t.date)}${t.start?', '+esc(t.start):''}</span><span>${esc(t.venue||'')}</span>${t.model?`<span>${esc(t.model)}</span>`:''}
+    <a href="${esc(t.url)}" target="_blank" rel="noopener">${T('source')} ↗</a>${t.sheet?`<a href="${esc(t.sheet)}" target="_blank" rel="noopener">${T('sheet')} ↗</a>`:''}</div>
+    <div class="meta">${statusPill}${playersIn(t).map(p=>`<span class="pill her">${esc(FIRST(p))}</span>`).join('')}</div></div>`;
+  if(!league){h+=`<div class="empty"><p class="note">${T('notReg')}</p></div>`;$('#view').innerHTML=h;bindBack();return}
+  // her tournament (all stages)
+  {const seenK=new Set();for(const p of playersIn(t)){const k=t.leagues.map(l=>l.teams.find(x=>(focusOf(x)||[]).includes(p))).find(Boolean)?.key;if(seenK.has(k))continue;seenK.add(k);h+=herBlock(t,p)}}
+  // stage / league switch
+  if(t.leagues.length>1){h+=`<div class="toolbar"><div class="seg" role="group" aria-label="${T('stage')}">${t.leagues.map((l,i)=>`<button type="button" data-li="${i}" aria-pressed="${i===li}">${esc(l.system==='cvf-q18'?T('qualif'):l.system?T('main'):l.name)}</button>`).join('')}</div></div>`}
+  const L0=build(t,league,false);const proj=mode==='proj'||!L0.hasOfficial;const L=proj&&L0.hasOfficial?build(t,league,true):L0;
+  h+=`<div class="toolbar"><div class="seg" role="group"><button type="button" data-mode="auto" aria-pressed="${!proj}" ${L0.hasOfficial?'':'disabled'}>${T('showOfficial')}</button><button type="button" data-mode="proj" aria-pressed="${proj}">${T('showProj')}</button></div>
+    <span class="pill ${proj?'proj':'official'}">${proj?T('projected'):T('official')}</span></div>`;
+  const fks=new Set(focusKeys(league));
+  if(L.kind==='pvs'&&L.layout.orderEstimated&&proj)h+=`<p class="note">${T('orderEst',L.n)}</p>`;
+  if(league.seedNote)h+=`<p class="note">${T('seedNote')}</p>`;
+  h+=finalBlock(t,league,L,fks);
+  if(L.groups.length)h+=`<section class="block"><h2>${T('groups')}</h2><div class="groups">${L.groups.map(g=>groupCard(g,L,fks)).join('')}</div><p class="note">${T('tieNote')}</p></section>`;
+  h+=koBlock(t,L,fks,proj);
+  h+=pairsBlock(league,fks);
+  $('#view').innerHTML=h;bindBack();
+  document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;render()}));
+  document.querySelectorAll('[data-li]').forEach(b=>b.addEventListener('click',()=>{leagueSel[t.id]=+b.dataset.li;mode='auto';render()}));
+}
+function bindBack(){$('#backBtn').addEventListener('click',()=>{history.pushState(null,'',location.pathname+location.search);cur=null;render()})}
+
+// Her tournament: every match of her pair across stages, in order, plus where she goes next
+function herBlock(t,player){
+  const items=[];let me=null,info='',finTxt='',paths='';
+  for(const lg of t.leagues){
+    const tm=lg.teams.find(x=>(focusOf(x)||[]).includes(player));if(!tm)continue;me=tm;const k=tm.key;
+    const L=build(t,lg,false);const stageName=isCvf(lg)?(lg.system==='cvf-q18'?T('qualif'):T('main')):lg.name;
+    const g=L.groups.find(x=>x.teams.includes(k));
+    if(g)for(const m of [...g.matches].sort((a,b)=>(a.no||a.round||0)-(b.no||b.round||0)))if(m.a===k||m.b===k)items.push(tlItem(m,k,L,`${stageName} · ${T('group')} ${g.name}`));
+    const ko=[...L.ko].sort((a,b)=>(a.match.no||a.t.round||0)-(b.match.no||b.t.round||0));
+    for(const r of ko)if(r.match.a===k||r.match.b===k)items.push(tlItem({...r.match,round:r.match.round||r.t.round,id:r.id},k,L,`${stageName} · ${T(r.t.stage)}`));
+    info=`${T('seed')} ${tm.seed}${tm.club?' · '+esc(tm.club):''}${g?` · ${T('group')} ${g.name}`:''}`;
+    const fr=L.final&&L.final.find(r=>r.key===k);
+    if(fr&&!fr.q)finTxt=`<span class="pill her">${T('finalPlace')} ${placeTxt(fr)}${fr.pts!==undefined?' · '+fr.pts+' '+T('pts'):''}</span>`;
+    if(statusOf(t)!=='finished')paths+=nextPaths(L,k,g);
+  }
+  if(!me)return '';
+  return `<section class="herbox"><div class="who"><span class="eyebrow">${T('herDay')}</span><b>${esc(me.p1)} / ${esc(me.p2)}</b><span class="note">${info}</span>${finTxt}</div>
+    <div class="timeline">${items.join('')||`<p class="note">${T('matchesAppear')}</p>`}</div>${paths}</section>`;
+}
+function tlItem(m,k,L,ctx){
+  const opp=m.a===k?m.b:m.a;const s=parseSets(m.sets);let cls='p',txt=T('toPlay');
+  if(s){const mine=m.a===k?s:[s[1],s[0]];cls=mine[0]>mine[1]?'w':'l';txt=`${mine[0]}:${mine[1]}`}
+  const pts=s&&m.points?(m.a===k?m.points:String(m.points).replace(/(\d+)\s*:\s*(\d+)/g,'$2:$1')):'';
+  const o=L.byKey[opp];const top=m.id?m.id:(m.round?'R'+m.round:'');
+  const when=[whenTxt(m),m.court?T('court')+' '+esc(m.court):''].filter(Boolean).join(' · ');
+  const rlab=m.round?(/^\d+$/.test(String(m.round))&&!m.id?'':esc(m.round)):'';
+  return `<div class="tl"><div class="rd">${esc(top)}<small>${when||rlab}</small></div>
+   <div class="vs"><div class="opp">${o?`${esc(o.p1)} / ${esc(o.p2)}`:esc(opp||'?')}</div><div class="sub">${esc(ctx)}${o?` · ${T('seed')} ${o.seed}`:''}${pts?' · '+esc(pts):''}</div></div>
+   <div class="res ${cls}">${txt}</div></div>`;
+}
+// Where she goes next: from the group (by position) or from her latest knockout match (if win / if loss)
+function nextPaths(L,k,g){
+  const tplMatches=L.kind==='pvs'?(L.tpl||[]):(L.tpl?L.tpl.matches:[]);if(!tplMatches.length)return '';
+  const res=Object.fromEntries(L.ko.map(r=>[r.id,r]));if(L.kind==='cvf')for(const m of L.allMatches)res[m.id]=res[m.id]||{id:m.id,t:m.t,match:m.match};
+  const otherLabel=(t,side)=>{const r=side==='a'?t.b:t.a;const rr=res[t.id];const team=rr&&(side==='a'?rr.match.b:rr.match.a);return team?teamName(L,team):esc(refLabel(r))};
+  const succ=(id,kind)=>tplMatches.filter(t=>(t.a&&t.a[kind]===id)||(t.b&&t.b[kind]===id)).map(t=>({t,side:t.a&&t.a[kind]===id?'a':'b'}));
+  const mine=Object.values(res).filter(r=>r.match&&(r.match.a===k||r.match.b===k)).sort((a,b)=>(a.match.no||a.t.round||0)-(b.match.no||b.t.round||0));
+  const last=mine[mine.length-1];
+  const card=(title,list,outPlace)=>`<div class="path"><b>${title}</b>${list.length?list.map(x=>`${esc(T(x.t.stage||'')||'')} ${esc(x.t.id)} ${T('vs')} ${otherLabel(x.t,x.side)}`).join('<br>'):(outPlace?`${T('out')} ${outPlace}`:'')}</div>`;
+  if(last&&last.t&&(last.t.sec||L.kind==='pvs'&&!last.t.grp)&&!(L.kind==='pvs'&&!last.t.id)){
+    const wl=winLose(last.match);
+    if(!wl){const w=succ(last.id||last.t.id,'w'),l=succ(last.id||last.t.id,'l');if(!w.length&&!l.length&&!last.t.out&&!last.t.qualify)return '';
+      return `<div class="eyebrow">${T('next')}: ${esc(last.t.id)}</div><div class="paths">${card(T('ifWin'),w,last.t.qualify?T('qualified'):'')}${card(T('ifLoss'),l,last.t.out)}</div>`}
+    return '';
+  }
+  if(g&&L.groups.length){const res2=g.rank&&g.rank.complete;if(res2)return '';
+    const out=[];for(let p=1;p<=g.teams.length;p++){const tm=tplMatches.find(x=>(x.a&&x.a.g===g.name&&x.a.pos===p)||(x.b&&x.b.g===g.name&&x.b.pos===p));
+      if(tm){const other=tm.a.g===g.name&&tm.a.pos===p?tm.b:tm.a;out.push(`<div class="path"><b>${T('nth',p)}</b>${esc(T(tm.stage))} ${esc(tm.id||'')} ${T('vs')} ${esc(refLabel(other))}</div>`)}
+      else if(L.tpl&&L.tpl.groupOut&&L.tpl.groupOut[p])out.push(`<div class="path"><b>${T('nth',p)}</b>${T('out')} ${L.tpl.groupOut[p]}</div>`)}
+    if(out.length)return `<div class="eyebrow">${T('afterGroups')}</div><div class="paths">${out.join('')}</div>`}
+  return '';
+}
+function finalBlock(t,league,L,fks){
+  if(!L.final||!L.final.length)return '';const pvs=L.kind==='pvs';
+  const list=[...L.final].filter(r=>!r.q).sort((a,b)=>a.place-b.place);
+  const tr=r=>`<tr class="${fks.has(r.key)?'mine':''}"><td>${placeTxt(r)}</td><td>${teamName(L,r.key)}<span class="club">${esc(L.byKey[r.key]?.club||'')}</span></td>${pvs?`<td>${r.pts}</td>`:''}</tr>`;
+  const head=`<thead><tr><th>${T('place')}</th><th>${T('pair')}</th>${pvs?`<th>${T('points')}</th>`:''}</tr></thead>`;
+  const short=list.filter((r,i)=>i<4||fks.has(r.key));
+  const body=list.length>8?`<table class="tbl">${head}<tbody>${short.map(tr).join('')}</tbody></table><details class="fulllist" ontoggle="this.previousElementSibling.hidden=this.open"><summary>${T('showAll',list.length)}</summary><table class="tbl">${head}<tbody>${list.map(tr).join('')}</tbody></table></details>`:`<table class="tbl">${head}<tbody>${list.map(tr).join('')}</tbody></table>`;
+  return `<section class="block"><h2>${T('standings')}</h2><p class="note">${T('standingsNote')}${pvs?T('pointsNote',league.name):''}</p>${body}</section>`;
+}
+// Group as a cross table like the printed sheet at the venue
+function groupCard(g,L,fks){
+  const teams=g.teams;const pos=Object.fromEntries(teams.map((k,i)=>[k,i+1]));
+  const real=g.matches.filter(m=>pos[m.a]&&pos[m.b]);
+  let rank={},rowOf={};const anyPlayed=real.some(m=>parseSets(m.sets));
+  if(g.rank&&g.rank.mod){(g.rank.order||[]).forEach((k,i)=>rank[k]=i+1)}else if(g.rank){g.rank.rows.forEach((r,i)=>{rank[r.key]=i+1;rowOf[r.key]=r})}
+  const sums=k=>{let sw=0,sl=0,pw=0,pl=0;for(const m of real){const s=parseSets(m.sets);if(!s)continue;const p=String(m.points||'');let a=0,b=0;for(const x of p.matchAll(/(\d+)\s*:\s*(\d+)/g)){a+=+x[1];b+=+x[2]}
+      if(m.a===k){sw+=s[0];sl+=s[1];pw+=a;pl+=b}else if(m.b===k){sw+=s[1];sl+=s[0];pw+=b;pl+=a}}return {sw,sl,pw,pl}};
+  const find=(x,y)=>real.find(m=>(m.a===x&&m.b===y)||(m.a===y&&m.b===x));
+  const short=k=>{const tm=L.byKey[k];return tm?`<span class="pn">${esc(tm.p1.split(' ').slice(-1)[0])}</span><span class="pn">${esc(tm.p2.split(' ').slice(-1)[0])}</span>`:esc(k)};
+  const full=k=>{const tm=L.byKey[k];return tm?`<span class="sn">${esc(tm.p1.split(' ').slice(-1)[0])} / ${esc(tm.p2.split(' ').slice(-1)[0])}</span><span class="pn">${esc(tm.p1)}</span><span class="pn">${esc(tm.p2)}</span><span class="club">${esc(tm.club||'')}</span>`:esc(k)};
+  const isMine=k=>fks.has(k);
+  const head=teams.map(k=>`<th class="${isMine(k)?'mine':''}" scope="col"><span class="no">${pos[k]}</span>${short(k)}</th>`).join('');
+  const body=teams.map(r=>{const cells=teams.map(c=>{if(r===c)return '<td class="diag"></td>';
+      const m=find(r,c);if(!m)return '<td class="none"></td>';const s=parseSets(m.sets);
+      if(!s)return `<td class="cell todo ${isMine(r)||isMine(c)?'her':''}"><span class="rr">${esc(m.id||('R'+m.round))}</span></td>`;
+      const mine=m.a===r?s:[s[1],s[0]];const pts=m.a===r?(m.points||''):String(m.points||'').replace(/(\d+)\s*:\s*(\d+)/g,'$2:$1');
+      return `<td class="cell ${mine[0]>mine[1]?'w':'l'}"><b>${mine[0]}:${mine[1]}</b><small>${esc(pts)}</small></td>`}).join('');
+    const x=sums(r);
+    return `<tr class="${isMine(r)?'mine':''}"><th scope="row"><span class="no">${pos[r]}</span>${full(r)}</th>${cells}<td class="sum">${x.sw}:${x.sl}</td><td class="sum">${x.pw}:${x.pl}</td><td class="rank">${anyPlayed&&rank[r]?rank[r]+'.':''}</td></tr>`}).join('');
+  const ordMatches=[...g.matches].sort((a,b)=>(a.no||a.round||0)-(b.no||b.round||0));
+  const order=ordMatches.map(m=>{const done=!!parseSets(m.sets);const her=isMine(m.a)||isMine(m.b);
+    let lab=m.lab||'';if(lab==='W')lab=T('W')+'-'+T('W');if(lab==='L')lab=T('L')+'-'+T('L');
+    return `<span class="ord ${done?'done':''} ${her?'her':''}">${esc(lab)}</span>`}).join('');
+  const complete=g.rank&&g.rank.complete;
+  return `<article class="group ${teams.some(isMine)?'mine':''}"><header><h3>${T('group')} ${esc(g.name)}</h3>${complete?`<span class="pill">${T('final')}</span>`:anyPlayed?`<span class="pill live">${T('inPlay')}</span>`:''}</header>
+   <div class="xscroll"><table class="xt"><thead><tr><th class="corner">${T('group')} ${esc(g.name)}</th>${head}<th class="sum">${T('sets')}</th><th class="sum">${T('balls')}</th><th class="rank">${T('place')}</th></tr></thead><tbody>${body}</tbody></table></div>
+   <div class="order"><span class="eyebrow">${T('order')}</span>${order}</div></article>`;
+}
+function bmatch(r,L,fks,showStage){
+  const m=r.match;const s=parseSets(m.sets);
+  const side=(key,ref,isA)=>{const won=s&&key&&((isA&&s[0]>s[1])||(!isA&&s[1]>s[0]));
+    const lab=key?teamShort(L,key):`<span class="slot">${esc(ref?(ref.label||refLabel(ref.ref||ref)):'')}</span>`;
+    return `<div class="row ${won?'won':''} ${key&&fks.has(key)?'mine':''}"><span>${lab}</span><span class="s">${s?(isA?s[0]:s[1]):''}</span></div>`};
+  const mine=fks.has(m.a)||fks.has(m.b);
+  const foot=[showStage?esc(T(r.t.stage)):'',esc(r.id||('R'+(m.round||r.t.round))),whenTxt(m),m.court?T('court')+' '+esc(m.court):'',m.points?esc(m.points):'',r.t.est?T('est'):''].filter(Boolean).join(' · ');
+  return `<div class="bm ${mine?'mine':''}">${side(m.a,r.A,true)}${side(m.b,r.B,false)}<div class="foot">${foot}</div></div>`;
+}
+function teamShort(L,k){const tm=L.byKey[k];return tm?esc(tm.p1.split(' ').slice(-1)[0]+' / '+tm.p2.split(' ').slice(-1)[0]):esc(k)}
+function koBlock(t,L,fks,proj){
+  if(L.kind==='cvf-raw'){if(!L.raw.length)return '';return `<section class="block"><h2>${T('playoff')}</h2><div class="places">${L.raw.map(m=>bmatch({t:{stage:''},id:'M'+m.no,A:null,B:null,match:m},L,fks,false)).join('')}</div></section>`}
+  if(!L.ko.length){
+    if(L.kind==='pvs'&&L.officialPlayoff.length)return `<section class="block"><h2>${T('playoff')}</h2><div class="places">${L.officialPlayoff.map(m=>bmatch({t:{stage:''},A:null,B:null,match:m},L,fks,false)).join('')}</div></section>`;
+    const msg=L.kind==='pvs'?(L.layout.playoff==='24T-8G'?T('noPlayoff')['24T-8G']:T('noPlayoff').none):T('noPlayoff').skup;
+    return `<section class="block"><h2>${T('playoff')}</h2><p class="note">${msg}</p></section>`}
+  const note=`<p class="note">${proj?T('slotNote'):T('slotNoteOff')}</p>`;
+  if(L.kind==='pvs'){
+    const cols=L.tpl.some(x=>x.col===0)?[0,1,2,3]:[2,3];const names={0:'r12',1:'qf',2:'sf',3:'medals'};
+    const col=c=>L.ko.filter(r=>r.t.col===c);
+    const br=`<div class="bracket-scroll"><div class="bracket" style="grid-template-columns:repeat(${cols.length},minmax(170px,1fr));min-width:${cols.length*185}px">${cols.map(c=>`<div class="bcol"><h4>${T(names[c])}</h4>${col(c).map(r=>bmatch(r,L,fks,c===3)).join('')}</div>`).join('')}</div></div>`;
+    const rest=L.ko.filter(r=>r.t.col===undefined);
+    return `<section class="block"><h2>${T('playoff')}</h2>${note}${br}<h3>${T('placement')}</h3><div class="places">${rest.map(r=>bmatch(r,L,fks,true)).join('')}</div></section>`}
+  let h=`<section class="block"><h2>${T('playoff')}</h2>${note}`;
+  for(const sec of L.tpl.sections){const ms=L.ko.filter(r=>r.t.sec===sec.key);
+    const nc=sec.cols.length;
+    h+=`<h3>${T(sec.title)}</h3><div class="bracket-scroll"><div class="bracket" style="grid-template-columns:repeat(${nc},minmax(170px,1fr));min-width:${nc*185}px">${sec.cols.map((c,i)=>`<div class="bcol"><h4>${T(c)}</h4>${ms.filter(r=>r.t.col===i).map(r=>bmatch(r,L,fks,sec.key==='fin'||c==='medals')).join('')}</div>`).join('')}</div></div>`}
+  return h+'</section>';
+}
+function pairsBlock(league,fks){
+  const cvf=isCvf(league);
+  const rows=[...league.teams].sort((a,b)=>a.seed-b.seed).map(tm=>`<tr class="${fks.has(tm.key)?'mine':''}"><td>${tm.seed}</td><td>${esc(tm.p1)} / ${esc(tm.p2)}${tm.note?` <span class="pill">${esc(tm.note)}</span>`:''}<span class="club">${esc(tm.club||'')}</span></td><td>${tm.index??''}</td></tr>`).join('');
+  return `<section class="block"><h2>${T('seeded')}</h2><div class="bracket-scroll"><table class="tbl"><thead><tr><th>#</th><th>${T('pair')}</th><th>${cvf?T('entry'):T('index')}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
+}
+
+function render(){
+  applyStatic();
+  if(!DATA){return}
+  const t=cur&&DATA.tournaments.find(x=>x.id===cur);
+  if(t)detailView(t);else listView();
+  window.scrollTo&&window.scrollTo(0,0);
+}
+const PUBLIC=!window.claude;
+async function load(silent){
+  let nd;
+  try{const r=await fetch(PUBLIC?'data.json?ts='+Date.now():'data.json',{cache:'no-store'});nd=await r.json()}
+  catch(e){if(silent)return;applyStatic();$('#view').innerHTML=`<div class="empty"><p class="note">${T('noData')}</p></div>`;return}
+  if(silent&&DATA&&nd.updatedAt===DATA.updatedAt)return;
+  DATA=nd;
+  const u=new Date(DATA.updatedAt);$('#updated').textContent=T('updated')+' '+u.toLocaleString(loc(),{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});
+  if(silent){const y=window.scrollY;if(cur&&!DATA.tournaments.some(x=>x.id===cur))cur=null;render();window.scrollTo&&window.scrollTo(0,y);return}
+  const h=(location.hash||'').slice(1);cur=DATA.tournaments.some(x=>x.id===h)?h:null;render();
+}
+window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);cur=DATA&&DATA.tournaments.some(x=>x.id===h)?h:null;mode='auto';render()});
+$('#home').addEventListener('click',()=>{history.pushState(null,'',location.pathname+location.search);cur=null;render()});
+document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{LANG=b.dataset.lang;try{localStorage.setItem('lang',LANG)}catch{};render();if(DATA){const u=new Date(DATA.updatedAt);$('#updated').textContent=T('updated')+' '+u.toLocaleString(loc(),{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}}));
+applyStatic();load();
+// Public copy (outside Claude): data are updated automatically on GitHub; the button reloads them, and the page checks for new data every 5 minutes
+if(PUBLIC){const ol=$('#ownerLink');ol.hidden=false;ol.removeAttribute('href');ol.removeAttribute('target');ol.setAttribute('role','button');
+  const st=()=>{$('#ownerLinkTxt').textContent=T('refreshShort');ol.title=T('reloadHint');ol.setAttribute('aria-label',T('reloadHint'))};st();
+  document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',st));
+  ol.addEventListener('click',async e=>{e.preventDefault();ol.style.opacity=.6;await load(true);ol.style.opacity=''});
+  setInterval(()=>{if(!document.hidden)load(true)},5*60e3);
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden)load(true)})}
+
+/* ---- Owner only: add a tournament link / refresh results (db queue + start the updater) ---- */
+(async()=>{
+  const db=await window.claude?.use?.('db');if(!db)return;
+  try{const u=await window.claude.use('user');if(u&&u.can&&u.can('data.write')===false)return}catch{}
+  $('#adminBlock').hidden=false;
+  const col=db.collection('requests');const seen={};
+  try{col.orderBy('createdAt','desc').limit(8).onSnapshot(s=>{let reload=false;
+    $('#reqList').innerHTML=s.docs.map(d=>{const x=d.data()||{};if(x.status==='done'&&seen[d.id]&&seen[d.id]!=='done')reload=true;seen[d.id]=x.status;
+      return `<li><span>${esc(x.type==='refresh'?T('refreshJob'):x.url)}</span><span>${esc(T('st')[x.status]||x.status)}${x.message?' · '+esc(x.message):''}</span></li>`}).join('');
+    if(reload)setTimeout(load,4000)},()=>{$('#adminBlock').hidden=true})}catch{$('#adminBlock').hidden=true}
+  let busy=false;
+  const setBusy=b=>{$('#refreshBtn').disabled=b;$('#refreshTop').disabled=b;$('#refreshTopTxt').textContent=b?T('refreshBusyShort'):T('refreshShort');$('#refreshTop').title=b?T('busy',0):T('refreshHelp');$('#refreshTop').setAttribute('aria-label',b?T('refreshBusyShort'):T('refreshBtn'))};
+  $('#refreshTop').hidden=false;setBusy(false);
+  try{col.where('status','in',['pending','working']).onSnapshot(s=>{const d=s.docs.map(x=>x.data()||{});
+    const recent=x=>{const t=Date.parse(x.updatedAt||x.createdAt||'');return !t||Date.now()-t<45*60e3};
+    const work=d.filter(x=>x.status==='working'&&recent(x)).length;const wait=d.filter(x=>x.status==='pending'&&x.type!=='refresh').length;
+    busy=work>0;setBusy(busy);
+    $('#queueInfo').textContent=(work?T('busy',work)+' ':'')+(wait?T('queue',wait):'')},()=>{})}catch{}
+  const TRIGGER='trig_01V1CxQm76ag84gww5afYKfk';
+  async function kick(){try{const mcp=await window.claude.use('mcp');if(!mcp)return false;
+      const lt=await mcp.listTools('Claude Code Remote');const srv=(lt.servers||[]).find(s=>s.server==='Claude Code Remote');
+      const tool=srv&&srv.tools.find(t=>/fire_trigger$/.test(t.name));if(!tool)return false;
+      await mcp.callTool('Claude Code Remote',tool.name,{trigger_id:TRIGGER},{cache:false});return true}catch(e){return false}}
+  async function queue(job,okKey){
+    try{await col.add({...job,status:'pending',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()})}catch(err){$('#addMsg').textContent=T('saveFail');return}
+    $('#addMsg').textContent=T('starting');const ok=await kick();$('#addMsg').textContent=ok?T(okKey):T('kickFail')}
+  $('#addForm').addEventListener('submit',async e=>{e.preventDefault();const url=$('#linkInput').value.trim();
+    if(!/^https:\/\/(www\.|old\.)?(volejbalpraha\.cz|cvf\.cz)\//.test(url)){$('#addMsg').textContent=T('badLink');return}
+    $('#linkInput').value='';await queue({type:'add',url},'loadingAdd')});
+  const doRefresh=()=>{if(busy)return;busy=true;setBusy(true);queue({type:'refresh'},'loadingRefresh')};
+  $('#refreshBtn').addEventListener('click',doRefresh);$('#refreshTop').addEventListener('click',doRefresh);
+})();
+</script>
+
+</body></html>
