@@ -1,0 +1,60 @@
+name: Aktualizace dat
+
+on:
+  schedule:
+    - cron: '*/15 5-19 * * 6,0'   # víkendy každých 15 minut (cca 6-21 h českého času)
+    - cron: '17 */3 * * 1-5'      # pracovní dny každé 3 hodiny
+  workflow_dispatch:               # ruční spuštění (Actions -> Aktualizace dat -> Run workflow)
+  push:
+    branches: [main]               # po nahrání souborů jen znovu zveřejní web
+
+permissions:
+  contents: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Stáhnout výsledky a přihlášky
+        if: github.event_name != 'push'
+        run: |
+          npm install --no-audit --no-fund
+          node scripts/update.mjs data.json
+
+      - name: Uložit data.json
+        if: github.event_name != 'push'
+        run: |
+          if git diff --quiet -- data.json; then echo "Beze změn"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
+          git add data.json
+          git commit -m "data: aktualizace $(TZ=Europe/Prague date '+%Y-%m-%d %H:%M')"
+          git push
+
+      - name: Připravit web
+        run: |
+          mkdir _site
+          cp index.html data.json photo-*.jpg _site/
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+      - id: deploy
+        uses: actions/deploy-pages@v4
