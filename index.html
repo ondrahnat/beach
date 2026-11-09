@@ -35,7 +35,7 @@ header.top .wrap{display:flex;align-items:center;justify-content:space-between;g
 .brand{font-family:var(--display);font-weight:700;font-size:21px;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:8px;line-height:1;color:var(--ink);text-decoration:none;background:none;border:0;cursor:pointer;padding:0}
 .ball{flex:0 0 auto;width:20px;height:20px;border-radius:50%;background:conic-gradient(var(--accent) 0 33%,var(--mark) 0 66%,var(--surface) 0);border:2px solid var(--ink)}
 .topright{display:flex;align-items:center;gap:10px}
-.topbtn{display:inline-flex;align-items:center;gap:6px;font-size:13px;padding:6px 11px;white-space:nowrap}
+.topbtn{display:inline-flex;text-decoration:none;align-items:center;gap:6px;font-size:13px;padding:6px 11px;white-space:nowrap}
 .topbtn:disabled{opacity:.6;cursor:default}
 .topbtn .ri{font-size:15px;line-height:1}
 .updated{font-size:12px;color:var(--muted);text-align:right}
@@ -187,6 +187,7 @@ section.block{display:grid;gap:12px;padding-block:18px;border-top:1px solid var(
   <button class="brand" id="home" type="button"><span class="ball" aria-hidden="true"></span>Hnátová Beach Draw</button>
   <div class="topright">
     <div class="updated" id="updated"></div>
+    <a class="btn topbtn" id="ownerLink" href="https://claude.ai/artifact/BroEFXWcTXYNxhiq57D9ve" target="_blank" rel="noopener" hidden><span class="ri" aria-hidden="true">↻</span><span class="rt" id="ownerLinkTxt"></span></a>
     <button class="btn topbtn" type="button" id="refreshTop" hidden><span class="ri" aria-hidden="true">↻</span><span class="rt" id="refreshTopTxt"></span></button>
     <div class="lang" role="group" aria-label="Jazyk / Language">
       <button type="button" data-lang="cs" aria-pressed="true"><svg viewBox="0 0 6 4" aria-hidden="true"><rect width="6" height="2" fill="#fff"/><rect y="2" width="6" height="2" fill="#D7141A"/><path d="M0 0 3 2 0 4z" fill="#11457E"/></svg><span class="lt">CZ</span></button>
@@ -421,7 +422,7 @@ const I18N={
   w1:'Kolo I',w2:'Kolo II',w3:'Kolo III',w4:'Kolo IV',l1:'O 17. místo',l2:'O 13. místo',l3:'O 9. místo',l4:'O 7. místo',l5:'O 5. místo',qk:'Rozhodující zápasy',
   winBracket:'Pavouk vítězů',loseBracket:'Pavouk poražených (druhá šance)',finals:'Semifinále a medaile',qualKo:'Kvalifikace – zápasy o postup',
   W:'V',L:'P',seedRef:n=>`nasazený ${n}`,addTitle:'Přidat turnaj',addHelp:'Vlož odkaz na turnaj z volejbalpraha.cz nebo cvf.cz. Claude za pár minut načte páry, los i výsledky.',
-  addBtn:'Přidat turnaj',refreshBtn:'Obnovit výsledky',refreshHelp:'Obnovit výsledky: dopíše výsledky a body holek za posledních 14 dní, na 14 dní dopředu najde turnaje, kam jsou holky přihlášené (Pražská beachliga i ČVS), a znovu načte jejich přihlášené páry, nasazení, divoké karty a los. Aktualizuje i žebříčky. Jiný turnaj přidáte vložením odkazu.',refreshShort:'Obnovit',refreshBusyShort:'Načítá se…',badLink:'Použij odkaz z volejbalpraha.cz nebo cvf.cz.',saveFail:'Nepodařilo se uložit. Turnaje může přidávat jen vlastník stránky.',
+  addBtn:'Přidat turnaj',refreshBtn:'Obnovit výsledky',refreshHelp:'Obnovit výsledky: dopíše výsledky a body holek za posledních 14 dní, na 14 dní dopředu najde turnaje, kam jsou holky přihlášené (Pražská beachliga i ČVS), a znovu načte jejich přihlášené páry, nasazení, divoké karty a los. Aktualizuje i žebříčky. Jiný turnaj přidáte vložením odkazu.',refreshShort:'Obnovit',ownerHint:'Obnovit data (jen pro správce, otevře verzi v Claude)',refreshBusyShort:'Načítá se…',badLink:'Použij odkaz z volejbalpraha.cz nebo cvf.cz.',saveFail:'Nepodařilo se uložit. Turnaje může přidávat jen vlastník stránky.',
   starting:'Spouštím aktualizaci…',loadingAdd:'Načítám turnaj. Obvykle to trvá pár minut, stránka se obnoví sama.',loadingRefresh:'Stahuji nejnovější los a výsledky. Stránka se obnoví sama.',
   kickFail:'Uloženo, ale aktualizaci se odsud nepodařilo spustit. Povol pro tuto stránku konektor Claude Code Remote (Oprávnění) a klikni na Obnovit výsledky.',
   st:{pending:'ve frontě',working:'načítá se…',done:'načteno',error:'nepodařilo se načíst'},refreshJob:'Obnovit výsledky',
@@ -454,7 +455,7 @@ const I18N={
   w1:'Round I',w2:'Round II',w3:'Round III',w4:'Round IV',l1:'For 17th',l2:'For 13th',l3:'For 9th',l4:'For 7th',l5:'For 5th',qk:'Deciding matches',
   winBracket:'Winners bracket',loseBracket:'Losers bracket (second chance)',finals:'Semifinals and medals',qualKo:'Qualification deciders',
   W:'W',L:'L',seedRef:n=>`seed ${n}`,addTitle:'Add a tournament',addHelp:'Paste the tournament link from volejbalpraha.cz or cvf.cz. Claude loads the pairs, the draw and results in a few minutes.',
-  addBtn:'Add tournament',refreshBtn:'Refresh results',refreshHelp:'Refresh results: fills in the girls\' results and points from the last 14 days, finds tournaments in the next 14 days the girls are registered for (Prague league and ČVS) and reloads their registered pairs, seeding, wild cards and draw. Also updates the rankings. Add any other tournament by pasting its link.',refreshShort:'Refresh',refreshBusyShort:'Loading…',badLink:'Use a link from volejbalpraha.cz or cvf.cz.',saveFail:'Could not save. Only the page owner can add tournaments.',
+  addBtn:'Add tournament',refreshBtn:'Refresh results',refreshHelp:'Refresh results: fills in the girls\' results and points from the last 14 days, finds tournaments in the next 14 days the girls are registered for (Prague league and ČVS) and reloads their registered pairs, seeding, wild cards and draw. Also updates the rankings. Add any other tournament by pasting its link.',refreshShort:'Refresh',ownerHint:'Refresh data (admin only, opens the Claude version)',refreshBusyShort:'Loading…',badLink:'Use a link from volejbalpraha.cz or cvf.cz.',saveFail:'Could not save. Only the page owner can add tournaments.',
   starting:'Starting the update…',loadingAdd:'Loading the tournament. It usually takes a few minutes; the page refreshes by itself.',loadingRefresh:'Fetching the latest draw and results. The page refreshes by itself.',
   kickFail:'Saved, but the update could not be started from here. Allow the Claude Code Remote connector for this page (Permissions), then tap Refresh results.',
   st:{pending:'queued',working:'loading…',done:'loaded',error:'could not load'},refreshJob:'Refresh results',
@@ -761,6 +762,8 @@ window.addEventListener('hashchange',()=>{const h=location.hash.slice(1);cur=DAT
 $('#home').addEventListener('click',()=>{history.pushState(null,'',location.pathname+location.search);cur=null;render()});
 document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',()=>{LANG=b.dataset.lang;try{localStorage.setItem('lang',LANG)}catch{};render();if(DATA){const u=new Date(DATA.updatedAt);$('#updated').textContent=T('updated')+' '+u.toLocaleString(loc(),{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}}));
 applyStatic();load();
+// Public copy (outside Claude): owner link to the Claude version, where the refresh runs
+if(!window.claude){const ol=$('#ownerLink');ol.hidden=false;const st=()=>{$('#ownerLinkTxt').textContent=T('refreshShort');ol.title=T('ownerHint');ol.setAttribute('aria-label',T('ownerHint'))};st();document.querySelectorAll('[data-lang]').forEach(b=>b.addEventListener('click',st))}
 
 /* ---- Owner only: add a tournament link / refresh results (db queue + start the updater) ---- */
 (async()=>{
