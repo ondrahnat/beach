@@ -1,3 +1,4 @@
+yaml
 name: Aktualizace dat
 
 on:
@@ -5,8 +6,13 @@ on:
     - cron: '*/15 5-19 * * 6,0'   # víkendy každých 15 minut (cca 6-21 h českého času)
     - cron: '17 */3 * * 1-5'      # pracovní dny každé 3 hodiny
   workflow_dispatch:               # ruční spuštění (Actions -> Aktualizace dat -> Run workflow)
+    inputs:
+      history:
+        description: 'Dohledat i celou historii turnajů (trvá 10-30 minut)'
+        type: boolean
+        default: false
   push:
-    branches: [main]               # po nahrání souborů jen znovu zveřejní web
+    branches: [main]               # po nahrání souborů stáhne data a zveřejní web
 
 permissions:
   contents: write
@@ -19,8 +25,9 @@ concurrency:
 
 jobs:
   update:
+    if: ${{ !github.event.repository.is_template }}   # šablona sama nic nestahuje
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 60
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}
@@ -32,25 +39,27 @@ jobs:
           node-version: 20
 
       - name: Stáhnout výsledky a přihlášky
-        if: github.event_name != 'push'
+        continue-on-error: ${{ github.event_name == 'push' }}
         run: |
           npm install --no-audit --no-fund
-          node scripts/update.mjs data.json
+          node scripts/update.mjs data.json ${{ inputs.history && '--history' || '' }}
 
       - name: Uložit data.json
-        if: github.event_name != 'push'
         run: |
-          if git diff --quiet -- data.json; then echo "Beze změn"; exit 0; fi
+          if [ -z "$(git status --porcelain -- data.json)" ]; then echo "Beze změn"; exit 0; fi
           git config user.name "github-actions[bot]"
           git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
           git add data.json
           git commit -m "data: aktualizace $(TZ=Europe/Prague date '+%Y-%m-%d %H:%M')"
+          git pull --rebase --autostash
           git push
 
       - name: Připravit web
         run: |
           mkdir _site
-          cp index.html data.json photo-*.jpg _site/
+          cp index.html config.json _site/
+          cp data.json _site/ 2>/dev/null || true
+          find . -maxdepth 1 -type f \( -iname '*.jpg' -o -iname '*.jpeg' -o -iname '*.png' -o -iname '*.webp' \) -exec cp {} _site/ \;
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3
