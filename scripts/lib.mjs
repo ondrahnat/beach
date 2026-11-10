@@ -1,8 +1,16 @@
-// Hnátová Beach Draw - scraping and data rules (no AI, runs in GitHub Actions).
+// Beach Draw - scraping and data rules (no AI, runs in GitHub Actions).
 // Pure functions: every parser takes HTML/CSV text and a `parseHTML(html) -> Document` function,
 // so the same code runs in Node (linkedom) and in a browser (DOMParser) for testing.
 
-export const PLAYERS = ['Helena Hnátová', 'Markéta Hnátová'];
+// Players come from config.json (setPlayers). These defaults keep old callers working.
+export let PLAYERS = ['Helena Hnátová', 'Markéta Hnátová'];
+// ABV categories a player no longer plays (hidden in the app, never used for her profile link)
+export let ABV_EXCLUDE = { 'Helena Hnátová': ['ZKY'] };
+export function setPlayers(list) {
+  PLAYERS = list.map(p => nfc(p.name).trim());
+  ABV_EXCLUDE = Object.fromEntries(list.filter(p => Array.isArray(p.abvExclude) && p.abvExclude.length).map(p => [nfc(p.name).trim(), p.abvExclude]));
+}
+export const surnames = () => [...new Set(PLAYERS.map(p => lastWord(p)))];
 export const PVS = 'https://www.volejbalpraha.cz';
 export const CVF = 'https://www.cvf.cz';
 
@@ -14,7 +22,7 @@ export const lastWord = n => nfc(n).trim().split(/\s+/).pop();
 export const keyOf = (p1, p2) => `${lastWord(p1)}/${lastWord(p2)}`;
 export const isGirl = name => PLAYERS.some(p => fold(p) === fold(name));
 export const girlName = name => PLAYERS.find(p => fold(p) === fold(name)) || null;
-export const hasGirl = text => /hn[aá]tov[aá]/i.test(nfc(text));
+export const hasGirl = text => { const f = fold(text); return surnames().some(n => f.includes(fold(n))); };
 const num = s => { if (s == null) return null; const t = String(s).replace(/\s/g, '').replace(',', '.'); if (t === '' || t === '-') return null; const v = Number(t); return Number.isFinite(v) ? v : null; };
 const int = s => { const v = parseInt(String(s || '').trim(), 10); return Number.isFinite(v) ? v : null; };
 const hhmm = s => { const m = String(s || '').match(/(\d{1,2}):(\d{2})/); return m ? m[1].padStart(2, '0') + ':' + m[2] : null; };
@@ -176,8 +184,6 @@ export function parsePvsRanking(html, parseHTML) {
   const rows = [...d.querySelectorAll('table tr')].slice(1).map(tr => { const tds = [...tr.querySelectorAll('td')]; const a = tds[1] && tds[1].querySelector('a'); return { c: tds.map(txt), href: a ? a.getAttribute('href') : null }; }).filter(r => r.c.length >= 4);
   return { of: rows.length, rows: rows.map(({ c, href }) => ({ rank: int(c[0]), name: c[1], club: c[2], points: num(c[3]), href })) };
 }
-// ABV categories a girl no longer plays (hidden in the app, never used for her profile link)
-export const ABV_EXCLUDE = { 'Helena Hnátová': ['ZKY'] };
 export const ABV_ORDER = ['ZKY', 'KKY', 'JKY', 'Z'];
 
 /* =============== ČVS (cvf.cz) =============== */
