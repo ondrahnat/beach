@@ -66,6 +66,25 @@ h3{font-size:18px}
 .filters label{display:grid;gap:4px}
 .filters select{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink)}
 .count{font-size:13px;color:var(--muted);padding-block:6px}
+.navtabs{display:flex;gap:0;margin-top:16px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--surface);width:max-content;max-width:100%}
+.navtabs a{font-weight:600;font-size:14px;padding:8px 14px;color:var(--muted);text-decoration:none}
+.navtabs a[aria-current="page"]{background:var(--accent);color:var(--accent-ink)}
+.h2h-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,190px),1fr));gap:10px;padding-block:14px 6px}
+.h2h-form label{display:grid;gap:4px}
+.h2h-form select,.h2h-form input{font:inherit;font-size:14px;padding:8px 10px;border:1px solid var(--line);border-radius:9px;background:var(--surface);color:var(--ink);min-width:0}
+.h2h-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin-block:8px}
+.h2h-sum div{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.h2h-sum b{display:block;font-family:var(--display);font-size:28px;line-height:1.1}
+.h2h-sum span{font-size:12px;color:var(--muted)}
+.h2h-sum .w b{color:var(--win)} .h2h-sum .l b{color:var(--loss)}
+.h2h-list{display:grid;gap:6px;margin-top:10px}
+.h2h-row{display:grid;grid-template-columns:84px 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;text-decoration:none;color:inherit}
+.h2h-row:hover{border-color:var(--accent)}
+.h2h-row .dt{font-family:var(--display);font-weight:700;font-size:15px;line-height:1.1}
+.h2h-row .dt small{display:block;font-family:var(--body);font-weight:500;font-size:11px;color:var(--muted)}
+.h2h-row .vs{min-width:0;font-size:13px}
+.h2h-row .vs .sub{font-size:12px;color:var(--muted)}
+@media (max-width:560px){.h2h-form{grid-template-columns:1fr 1fr}.h2h-row{grid-template-columns:64px 1fr auto}}
 .tlist{display:grid;gap:8px}
 .trow{display:grid;grid-template-columns:76px 1fr auto;gap:12px;align-items:center;text-align:left;width:100%;font:inherit;color:inherit;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:10px 12px;cursor:pointer}
 .trow:hover{border-color:var(--accent)}
@@ -427,6 +446,12 @@ const I18N={
   kickFail:'Uloženo, ale aktualizaci se odsud nepodařilo spustit. Povol pro tuto stránku konektor Claude Code Remote (Oprávnění) a klikni na Obnovit výsledky.',
   st:{pending:'ve frontě',working:'načítá se…',done:'načteno',error:'nepodařilo se načíst'},refreshJob:'Obnovit výsledky',
   prof_pvs:'Pražská beachliga (zimní 2026/27)',prof_abv:'Žebříček ABV (národní)',prof_cat:'Kategorie',prof_rank:'Pořadí',prof_pts:'Body',asOf:d=>`Žebříčky k ${d}`,ofN:n=>`z ${n}`,profile:'profil',
+  tabList:'Turnaje',tabH2h:'Vzájemné zápasy',h2hMode:'Typ srovnání',h2hModes:{'1:1':'1:1 hráčka vs hráčka','2:2':'2:2 dvojice vs dvojice','1:2':'1:2 hráčka vs dvojice','2:1':'2:1 dvojice vs hráčka'},
+  h2hOur:'Naše hráčka',h2hPartner:'Spoluhráčka',h2hOpp1:'Soupeřka',h2hOpp2:'Druhá soupeřka',h2hPick:'Napište jméno a příjmení',
+  h2hMatches:'Zápasy',h2hWins:'Výhry',h2hLosses:'Prohry',h2hSets:'Sety',h2hPoints:'Míče',h2hNone:'Žádný vzájemný zápas v datech.',
+  h2hFill:'Vyberte soupeřku (jméno a příjmení) a zobrazí se vzájemné zápasy.',
+  h2hNote:(d,n)=>`Počítá se ze zápasů, které jsou v datech (od ${d}). Pražská beachliga u starších turnajů výsledky jednotlivých zápasů na webu nezveřejňuje, u ${n} turnajů máme jen konečná umístění.`,
+  wo:'skreč',
   leagueN:n=>`${n}. liga`,showAll:n=>`Zobrazit celé pořadí (${n})`,noResult:'umístění zatím nezveřejněno',
   queue:n=>`Ve frontě čeká ${n} turnajů. Jedno kliknutí na Obnovit výsledky načte dalších asi 8.`,
   busy:n=>`Probíhá aktualizace, obvykle 5 až 20 minut. Tlačítko se znovu zapne, až doběhne, a stránka se obnoví sama.`,
@@ -460,6 +485,12 @@ const I18N={
   kickFail:'Saved, but the update could not be started from here. Allow the Claude Code Remote connector for this page (Permissions), then tap Refresh results.',
   st:{pending:'queued',working:'loading…',done:'loaded',error:'could not load'},refreshJob:'Refresh results',
   prof_pvs:'Prague beach league (winter 2026/27)',prof_abv:'ABV ranking (national)',prof_cat:'Category',prof_rank:'Rank',prof_pts:'Points',asOf:d=>`Rankings as of ${d}`,ofN:n=>`of ${n}`,profile:'profile',
+  tabList:'Tournaments',tabH2h:'Head to head',h2hMode:'Comparison',h2hModes:{'1:1':'1:1 player vs player','2:2':'2:2 pair vs pair','1:2':'1:2 player vs pair','2:1':'2:1 pair vs player'},
+  h2hOur:'Our player',h2hPartner:'Partner',h2hOpp1:'Opponent',h2hOpp2:'Second opponent',h2hPick:'Type first and last name',
+  h2hMatches:'Matches',h2hWins:'Wins',h2hLosses:'Losses',h2hSets:'Sets',h2hPoints:'Points',h2hNone:'No head-to-head match in the data.',
+  h2hFill:'Choose an opponent (first and last name) to see the matches.',
+  h2hNote:(d,n)=>`Counted from the matches in the data (since ${d}). For older tournaments the Prague league site does not publish single match results; for ${n} tournaments we only have final places.`,
+  wo:'walkover',
   leagueN:n=>`League ${n}`,showAll:n=>`Show full standings (${n})`,noResult:'place not published yet',
   queue:n=>`${n} tournaments are queued. One tap on Refresh results loads about 8 more.`,
   busy:n=>`An update is running, usually 5 to 20 minutes. The button turns back on when it finishes and the page reloads by itself.`,
@@ -557,7 +588,7 @@ function listView(){
   const pass=t=>(F.player==='all'||playersIn(t).includes(F.player))&&(F.series==='all'||seriesOf(t)===F.series)&&(F.cat==='all'||catOf(t)===F.cat)&&(F.season==='all'||seasonOf(t)===F.season);
   const today=new Date().toISOString().slice(0,10);
   const list=all.filter(pass).sort((a,b)=>{const ua=a.date>=today,ub=b.date>=today;if(ua!==ub)return ua?-1:1;return ua?a.date.localeCompare(b.date):b.date.localeCompare(a.date)});
-  let h=profilesView()+`<div class="filters">
+  let h=profilesView()+navTabs('list')+`<div class="filters">
     <label><span class="eyebrow">${T('player')}</span><select id="fPlayer">${opts([['all',T('both')],...players.map(p=>[p,p])],F.player)}</select></label>
     <label><span class="eyebrow">${T('series')}</span><select id="fSeries">${opts([['all',T('all')],['pbl',T('s_pbl')],['leto',T('s_leto')],['abv',T('s_abv')]],F.series)}</select></label>
     <label><span class="eyebrow">${T('category')}</span><select id="fCat">${opts([['all',T('all')],...cats.map(c=>[c,c])],F.cat)}</select></label>
@@ -585,7 +616,7 @@ function listView(){
   $('#view').innerHTML=h;
   const bind=(id,key)=>$(id).addEventListener('change',e=>{F[key]=e.target.value;try{localStorage.setItem('filters',JSON.stringify(F))}catch{};listView()});
   bind('#fPlayer','player');bind('#fSeries','series');bind('#fCat','cat');bind('#fSeason','season');
-  document.querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.id}));
+  document.querySelectorAll('.trow').forEach(b=>b.addEventListener('click',()=>{location.hash=b.dataset.id}));bindNav();
 }
 
 /* ---- detail view ---- */
@@ -618,7 +649,7 @@ function detailView(t){
   document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>{mode=b.dataset.mode;render()}));
   document.querySelectorAll('[data-li]').forEach(b=>b.addEventListener('click',()=>{leagueSel[t.id]=+b.dataset.li;mode='auto';render()}));
 }
-function bindBack(){$('#backBtn').addEventListener('click',()=>{history.pushState(null,'',location.pathname+location.search);cur=null;render()})}
+function bindBack(){$('#backBtn').addEventListener('click',()=>{if(FROM_H2H){FROM_H2H=false;location.hash='h2h';return}history.pushState(null,'',location.pathname+location.search);cur=null;render()})}
 
 // Her tournament: every match of her pair across stages, in order, plus where she goes next
 function herBlock(t,player){
@@ -745,11 +776,88 @@ function pairsBlock(league,fks){
   return `<section class="block"><h2>${T('seeded')}</h2><div class="bracket-scroll"><table class="tbl"><thead><tr><th>#</th><th>${T('pair')}</th><th>${cvf?T('entry'):T('index')}</th></tr></thead><tbody>${rows}</tbody></table></div></section>`;
 }
 
+/* ---- head to head ---- */
+let FROM_H2H=false;
+let H2H={mode:'1:1',girl:'',partner:'',o1:'',o2:'',series:'all',cat:'all'};try{Object.assign(H2H,JSON.parse(localStorage.getItem('h2h')||'{}'))}catch{}
+const foldN=s=>String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/\s+/g,' ').trim();
+function navTabs(v){return `<nav class="navtabs" aria-label="${T('tabList')}"><a href="#" data-nav="list" ${v==='list'?'aria-current="page"':''}>${T('tabList')}</a><a href="#h2h" data-nav="h2h" ${v==='h2h'?'aria-current="page"':''}>${T('tabH2h')}</a></nav>`}
+function bindNav(){document.querySelectorAll('[data-nav]').forEach(a=>a.addEventListener('click',e=>{e.preventDefault();if(a.dataset.nav==='h2h'){location.hash='h2h'}else{history.pushState(null,'',location.pathname+location.search);cur=null;render()}}))}
+// every played match from the data: {t, stage, A:[p1,p2], B:[p1,p2], sets:[a,b] | null, wo, pts:[[a,b],...]}
+function allMatches(){
+  const out=[];
+  for(const t of DATA.tournaments)for(const l of t.leagues||[]){
+    const o=l.official;if(!o)continue;const tm=Object.fromEntries(l.teams.map(x=>[x.key,[x.p1,x.p2]]));
+    const push=(m,stage)=>{if(!m.a||!m.b||!tm[m.a]||!tm[m.b])return;const s=String(m.sets||'').match(/^([\dX]+):([\dX]+)$/i);if(!s)return;
+      const wo=/x/i.test(s[1])||/x/i.test(s[2]);const sets=wo?null:[+s[1],+s[2]];
+      const pts=[...String(m.points||'').matchAll(/(\d+)\s*:\s*(\d+)/g)].map(x=>[+x[1],+x[2]]);
+      const aWon=wo?/x/i.test(s[2]):sets[0]>sets[1];
+      out.push({t,league:l.name,stage,A:tm[m.a],B:tm[m.b],sets,wo,pts,aWon})};
+    for(const g of o.groups||[])for(const m of g.matches||[])push(m,`${T('group')} ${g.name}`);
+    for(const m of o.playoff||[])push(m,String(m.stage||'').replace(/\s+-\s+.*/,''));
+    for(const m of o.matches||[])push(m,m.round||'');
+  }
+  return out;
+}
+function h2hView(){
+  const ms=allMatches();
+  const girls=DATA.players;if(!girls.includes(H2H.girl))H2H.girl=girls[0];
+  const fam=n=>(FAMILY[n]&&FAMILY[n].nick)||n;
+  // all names that appear in the data, and the chosen girl's partners
+  const names=new Set();const partners={};
+  for(const t of DATA.tournaments)for(const l of t.leagues||[])for(const x of l.teams){names.add(x.p1);names.add(x.p2);
+    const ps=[x.p1,x.p2];const i=ps.findIndex(p=>foldN(p)===foldN(H2H.girl));if(i>=0){const o=ps[1-i];partners[o]=(partners[o]||0)+1}}
+  const plist=Object.entries(partners).sort((a,b)=>b[1]-a[1]).map(x=>x[0]);
+  if(H2H.mode[0]==='2'&&!plist.includes(H2H.partner))H2H.partner=plist[0]||'';
+  const opp2=H2H.mode[2]==='2';const our2=H2H.mode[0]==='2';
+  const opt=(arr,cur)=>arr.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('');
+  let h=profilesView()+navTabs('h2h')+`<div class="h2h-form">
+    <label><span class="eyebrow">${T('h2hMode')}</span><select id="hMode">${opt(Object.entries(T('h2hModes')),H2H.mode)}</select></label>
+    <label><span class="eyebrow">${T('h2hOur')}</span><select id="hGirl">${opt(girls.map(g=>[g,fam(g)+' ('+g+')']),H2H.girl)}</select></label>
+    ${our2?`<label><span class="eyebrow">${T('h2hPartner')}</span><select id="hPartner">${opt(plist.map(p=>[p,p+' ('+partners[p]+'×)']),H2H.partner)}</select></label>`:''}
+    <label><span class="eyebrow">${T('h2hOpp1')}</span><input id="hO1" list="hNames" value="${esc(H2H.o1)}" placeholder="${T('h2hPick')}" autocomplete="off"></label>
+    ${opp2?`<label><span class="eyebrow">${T('h2hOpp2')}</span><input id="hO2" list="hNames" value="${esc(H2H.o2)}" placeholder="${T('h2hPick')}" autocomplete="off"></label>`:''}
+    <label><span class="eyebrow">${T('series')}</span><select id="hSeries">${opt([['all',T('all')],['pbl',T('s_pbl')],['leto',T('s_leto')],['abv',T('s_abv')]],H2H.series)}</select></label>
+    <label><span class="eyebrow">${T('category')}</span><select id="hCat">${opt([['all',T('all')],...[...new Set(DATA.tournaments.map(catOf))].filter(Boolean).sort().map(c=>[c,c])],H2H.cat)}</select></label>
+    <datalist id="hNames">${[...names].filter(n=>!girls.includes(n)).sort((a,b)=>a.localeCompare(b,'cs')).map(n=>`<option value="${esc(n)}">`).join('')}</datalist>
+  </div><div id="hOut"></div>`;
+  // coverage note
+  const withM=new Set(ms.map(m=>m.t.id));const first=ms.map(m=>m.t.date).sort()[0];
+  const without=DATA.tournaments.filter(t=>t.leagues&&t.leagues.length&&!withM.has(t.id)&&t.status==='finished').length;
+  h+=`<p class="note" style="margin-top:12px">${first?T('h2hNote',fmtDate(first),without):''}</p>`;
+  $('#view').innerHTML=h;bindNav();
+  const save=()=>{try{localStorage.setItem('h2h',JSON.stringify(H2H))}catch{}};
+  const draw=()=>{
+    const o1=foldN(H2H.o1),o2=foldN(H2H.o2),g=foldN(H2H.girl),pa=foldN(H2H.partner);
+    if(!o1||(opp2&&!o2)){$('#hOut').innerHTML=`<p class="note">${T('h2hFill')}</p>`;return}
+    const has=(side,n)=>side.some(p=>foldN(p)===n);
+    const ourOk=s=>has(s,g)&&(!our2||has(s,pa));const oppOk=s=>has(s,o1)&&(!opp2||has(s,o2));
+    const hits=[];
+    for(const m of ms){if(H2H.series!=='all'&&seriesOf(m.t)!==H2H.series)continue;if(H2H.cat!=='all'&&catOf(m.t)!==H2H.cat)continue;let our=null;if(ourOk(m.A)&&oppOk(m.B))our='A';else if(ourOk(m.B)&&oppOk(m.A))our='B';if(!our)continue;
+      const flip=our==='B';const won=flip?!m.aWon:m.aWon;const sets=m.sets?(flip?[m.sets[1],m.sets[0]]:m.sets):null;const pts=m.pts.map(p=>flip?[p[1],p[0]]:p);
+      hits.push({m,won,sets,pts,us:flip?m.B:m.A,them:flip?m.A:m.B})}
+    hits.sort((a,b)=>b.m.t.date.localeCompare(a.m.t.date));
+    const W=hits.filter(x=>x.won).length,sw=hits.reduce((a,x)=>a+(x.sets?x.sets[0]:0),0),sl=hits.reduce((a,x)=>a+(x.sets?x.sets[1]:0),0);
+    const pw=hits.reduce((a,x)=>a+x.pts.reduce((b,p)=>b+p[0],0),0),pl=hits.reduce((a,x)=>a+x.pts.reduce((b,p)=>b+p[1],0),0);
+    if(!hits.length){$('#hOut').innerHTML=`<p class="note">${T('h2hNone')}</p>`;return}
+    $('#hOut').innerHTML=`<div class="h2h-sum"><div><b>${hits.length}</b><span>${T('h2hMatches')}</span></div><div class="w"><b>${W}</b><span>${T('h2hWins')}</span></div><div class="l"><b>${hits.length-W}</b><span>${T('h2hLosses')}</span></div><div><b>${sw}:${sl}</b><span>${T('h2hSets')}</span></div><div><b>${pw}:${pl}</b><span>${T('h2hPoints')}</span></div></div>
+      <div class="h2h-list">${hits.map(x=>`<a class="h2h-row" href="#${esc(x.m.t.id)}" data-h2hgo><span class="dt">${fmtDate(x.m.t.date)}<small>${esc(x.m.t.category||'')}</small></span>
+        <span class="vs"><b>${esc(x.us.join(' / '))}</b> ${T('vs')} ${esc(x.them.join(' / '))}<div class="sub">${esc(T('s_'+seriesOf(x.m.t)))} · ${esc(x.m.t.category||'')} · ${esc(/^Liga \d+$/.test(x.m.league)?T('leagueN',x.m.league.replace(/\D/g,'')):x.m.league)} · ${esc(x.m.stage)}${x.pts.length?' · '+x.pts.map(p=>p.join(':')).join(', '):''}</div></span>
+        <span class="res ${x.won?'w':'l'}">${x.m.wo?T('wo'):x.sets.join(':')}</span></a>`).join('')}</div>`;
+    document.querySelectorAll('[data-h2hgo]').forEach(a=>a.addEventListener('click',()=>{FROM_H2H=true}));
+  };
+  $('#hMode').addEventListener('change',e=>{H2H.mode=e.target.value;save();h2hView()});
+  $('#hSeries').addEventListener('change',e=>{H2H.series=e.target.value;save();draw()});
+  $('#hCat').addEventListener('change',e=>{H2H.cat=e.target.value;save();draw()});
+  $('#hGirl').addEventListener('change',e=>{H2H.girl=e.target.value;H2H.partner='';save();h2hView()});
+  const p=$('#hPartner');if(p)p.addEventListener('change',e=>{H2H.partner=e.target.value;save();draw()});
+  for(const [id,k] of [['#hO1','o1'],['#hO2','o2']]){const el=$(id);if(el)el.addEventListener('input',e=>{H2H[k]=e.target.value;save();draw()})}
+  draw();
+}
 function render(){
   applyStatic();
   if(!DATA){return}
   const t=cur&&DATA.tournaments.find(x=>x.id===cur);
-  if(t)detailView(t);else listView();
+  if(t)detailView(t);else if(location.hash==='#h2h')h2hView();else listView();
   window.scrollTo&&window.scrollTo(0,0);
 }
 const PUBLIC=!window.claude;
