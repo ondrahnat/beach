@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="cs"><head><meta charset="utf-8"><title>Hnátová Beach Draw</title><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="description" content="Rozlosování, skupiny, play-off a výsledky beachvolejbalových turnajů Heli a Maky Hnátových.">
+<meta name="description" content="Rozlosování, skupiny, play-off a výsledky beachvolejbalových turnajů.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Ccircle cx=%2216%22 cy=%2216%22 r=%2214%22 fill=%22%23FFD23F%22 stroke=%22%2310202B%22 stroke-width=%223%22/%3E%3C/svg%3E">
 <style>body{margin:0}[hidden]{display:none!important}</style>
 </head><body>
@@ -203,7 +203,7 @@ section.block{display:grid;gap:12px;padding-block:18px;border-top:1px solid var(
 </style>
 
 <header class="top"><div class="wrap">
-  <button class="brand" id="home" type="button"><span class="ball" aria-hidden="true"></span>Hnátová Beach Draw</button>
+  <button class="brand" id="home" type="button"><span class="ball" aria-hidden="true"></span><span id="brandTxt">Hnátová Beach Draw</span></button>
   <div class="topright">
     <div class="updated" id="updated"></div>
     <a class="btn topbtn" id="ownerLink" href="https://claude.ai/artifact/BroEFXWcTXYNxhiq57D9ve" target="_blank" rel="noopener" hidden><span class="ri" aria-hidden="true">↻</span><span class="rt" id="ownerLinkTxt"></span></a>
@@ -565,9 +565,13 @@ function teamName(L,k){const tm=L.byKey[k];return tm?`${esc(tm.p1)} / ${esc(tm.p
 function placeTxt(r){if(r.q)return 'Q';return r.place===r.to?r.place+'.':r.place+'.–'+r.to+'.'}
 function whenTxt(m){const bits=[];if(m.date)bits.push(esc(m.date));if(m.time)bits.push(esc(m.time));return bits.join(' ')}
 
-// Rankings a player is no longer eligible for (Helena aged out of U16)
-const ABV_EXCLUDE={'Helena Hnátová':['ZKY']};
-const FAMILY={'Helena Hnátová':{nick:'Heli',photo:'photo-heli.jpg'},'Markéta Hnátová':{nick:'Maky',photo:'photo-maky.jpg'}};
+// Players, nicknames, photos, title and hidden ABV categories come from config.json (public site); these are the defaults
+let CFG={title:'Hnátová Beach Draw',players:[{name:'Helena Hnátová',nick:'Heli',photo:'photo-heli.jpg',abvExclude:['ZKY']},{name:'Markéta Hnátová',nick:'Maky',photo:'photo-maky.jpg'}]};
+let ABV_EXCLUDE={},FAMILY={};
+function applyConfig(c){if(c&&Array.isArray(c.players)&&c.players.length)CFG=c;ABV_EXCLUDE={};FAMILY={};
+  for(const p of CFG.players){FAMILY[p.name]={nick:p.nick||'',photo:p.photo||''};if(Array.isArray(p.abvExclude))ABV_EXCLUDE[p.name]=p.abvExclude}
+  const ti=CFG.title||'Beach Draw';document.title=ti;const b=$('#brandTxt');if(b)b.textContent=ti}
+applyConfig();
 function profilesView(){
   const P=DATA.profiles;if(!P||!P.players)return '';
   const card=p=>{const ini=p.name.split(' ').map(x=>x[0]).join('');const fam=FAMILY[p.name]||{};const photo=fam.photo||p.photo;
@@ -589,7 +593,7 @@ function listView(){
   const today=new Date().toISOString().slice(0,10);
   const list=all.filter(pass).sort((a,b)=>{const ua=a.date>=today,ub=b.date>=today;if(ua!==ub)return ua?-1:1;return ua?a.date.localeCompare(b.date):b.date.localeCompare(a.date)});
   let h=profilesView()+navTabs('list')+`<div class="filters">
-    <label><span class="eyebrow">${T('player')}</span><select id="fPlayer">${opts([['all',T('both')],...players.map(p=>[p,p])],F.player)}</select></label>
+    <label><span class="eyebrow">${T('player')}</span><select id="fPlayer">${opts([['all',players.length===2?T('both'):T('all')],...players.map(p=>[p,p])],F.player)}</select></label>
     <label><span class="eyebrow">${T('series')}</span><select id="fSeries">${opts([['all',T('all')],['pbl',T('s_pbl')],['leto',T('s_leto')],['abv',T('s_abv')]],F.series)}</select></label>
     <label><span class="eyebrow">${T('category')}</span><select id="fCat">${opts([['all',T('all')],...cats.map(c=>[c,c])],F.cat)}</select></label>
     <label><span class="eyebrow">${T('season')}</span><select id="fSeason">${opts([['all',T('all')],...seasons.map(s=>[s,s])],F.season)}</select></label>
@@ -861,13 +865,16 @@ function render(){
   window.scrollTo&&window.scrollTo(0,0);
 }
 const PUBLIC=!window.claude;
+let cfgLoaded=false;
 async function load(silent){
   let nd;
+  if(PUBLIC&&!cfgLoaded){try{const r=await fetch('config.json?ts='+Date.now(),{cache:'no-store'});if(r.ok){applyConfig(await r.json());cfgLoaded=true}}catch{}}
   try{const r=await fetch(PUBLIC?'data.json?ts='+Date.now():'data.json',{cache:'no-store'});nd=await r.json()}
   catch(e){if(silent)return;applyStatic();$('#view').innerHTML=`<div class="empty"><p class="note">${T('noData')}</p></div>`;return}
   if(silent&&DATA&&nd.updatedAt===DATA.updatedAt)return;
-  DATA=nd;
-  const u=new Date(DATA.updatedAt);$('#updated').textContent=T('updated')+' '+u.toLocaleString(loc(),{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'});
+  DATA=nd;DATA.tournaments=DATA.tournaments||[];
+  if(cfgLoaded||!DATA.players)DATA.players=CFG.players.map(p=>p.name);
+  if(DATA.updatedAt){const u=new Date(DATA.updatedAt);$('#updated').textContent=T('updated')+' '+u.toLocaleString(loc(),{day:'numeric',month:'numeric',hour:'2-digit',minute:'2-digit'})}
   if(silent){const y=window.scrollY;if(cur&&!DATA.tournaments.some(x=>x.id===cur))cur=null;render();window.scrollTo&&window.scrollTo(0,y);return}
   const h=(location.hash||'').slice(1);cur=DATA.tournaments.some(x=>x.id===h)?h:null;render();
 }

@@ -1,0 +1,8 @@
+{
+  "title": "Hnátová Beach Draw",
+  "players": [
+    { "name": "Helena Hnátová", "nick": "Heli", "photo": "photo-heli.jpg", "abvExclude": ["ZKY"] },
+    { "name": "Markéta Hnátová", "nick": "Maky", "photo": "photo-maky.jpg" }
+  ],
+  "historyFrom": "2022-08-01"
+}
