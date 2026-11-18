@@ -630,7 +630,7 @@ function detailView(t){
   const li=leagueSel[t.id]??(defLeague>=0?defLeague:0);const league=t.leagues[li];
   let h=`<button class="back" type="button" id="backBtn">${T('back')}</button>`;
   const sx=statusOf(t);const statusPill=sx==='live'?`<span class="pill live">${T('live')}</span>`:sx==='finished'?`<span class="pill">${T('finished')}</span>`:`<span class="pill">${T('upcoming')}</span>`;
-  h+=`<div class="hero"><div class="eyebrow">${esc(T('s_'+seriesOf(t)))} · ${esc(t.round||'')} · ${esc(t.category||'')}</div><h1>${esc(t.name)}</h1>
+  h+=`<div class="hero"><div class="eyebrow">${[T('s_'+seriesOf(t)),t.round,t.category,...t.leagues.filter(l=>!isCvf(l)&&focusKeys(l).length).map(l=>l.name)].filter(Boolean).map(esc).join(' · ')}</div><h1>${esc(t.name)}</h1>
     <div class="meta"><span>${fmtDate(t.date)}${t.start?', '+esc(t.start):''}</span><span>${esc(t.venue||'')}</span>${t.model?`<span>${esc(t.model)}</span>`:''}
     <a href="${esc(t.url)}" target="_blank" rel="noopener">${T('source')} ↗</a>${t.sheet?`<a href="${esc(t.sheet)}" target="_blank" rel="noopener">${T('sheet')} ↗</a>`:''}</div>
     <div class="meta">${statusPill}${playersIn(t).map(p=>`<span class="pill her">${esc(FIRST(p))}</span>`).join('')}</div></div>`;
@@ -665,7 +665,7 @@ function herBlock(t,player){
     if(g)for(const m of [...g.matches].sort((a,b)=>(a.no||a.round||0)-(b.no||b.round||0)))if(m.a===k||m.b===k)items.push(tlItem(m,k,L,`${stageName} · ${T('group')} ${g.name}`));
     const ko=[...L.ko].sort((a,b)=>(a.match.no||a.t.round||0)-(b.match.no||b.t.round||0));
     for(const r of ko)if(r.match.a===k||r.match.b===k)items.push(tlItem({...r.match,round:r.match.round||r.t.round,id:r.id},k,L,`${stageName} · ${T(r.t.stage)}`));
-    info=`${T('seed')} ${tm.seed}${tm.club?' · '+esc(tm.club):''}${g?` · ${T('group')} ${g.name}`:''}`;
+    info=`${isCvf(lg)?'':esc(lg.name)+' · '}${T('seed')} ${tm.seed}${tm.club?' · '+esc(tm.club):''}${g?` · ${T('group')} ${g.name}`:''}`;
     const fr=L.final&&L.final.find(r=>r.key===k);
     if(fr&&!fr.q)finTxt=`<span class="pill her">${T('finalPlace')} ${placeTxt(fr)}${fr.pts!==undefined?' · '+fr.pts+' '+T('pts'):''}</span>`;
     if(statusOf(t)!=='finished')paths+=nextPaths(L,k,g);
