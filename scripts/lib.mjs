@@ -112,7 +112,85 @@ export function parsePvsDetail(html, id, parseHTML) {
     }
     sched[n] = { groups, orders, playoff };
   }
-  return { id, date, start, kolo, venue, category, letni, total, lists, sched };
+  const info = pvsInfoLines(html, parseHTML);
+  return { id, date, start, kolo, venue, category, letni, total, lists, sched, info };
+}
+
+/* ---- per-league day, time and venue from the free-text propositions on the PVS detail page ---- */
+// Organisers write this by hand, so the parser is lenient and always keeps the source lines.
+export function pvsInfoLines(html, parseHTML) {
+  const i = html.indexOf('Typ turnaje'); if (i < 0) return [];
+  let j = html.length; for (const end of ['K zaregistrování', 'Celkem zaregistrováno']) { const k = html.indexOf(end, i); if (k > 0 && k < j) j = k; }
+  const lm = html.slice(i).search(/<h2[^>]*>\s*Liga\s+\d/i); if (lm > 0 && i + lm < j) j = i + lm;
+  const snip = html.slice(i, j).replace(/\s+/g, ' ').replace(/<br\s*\/?>|<\/(p|div|h\d|li|tr)>/gi, '\n');
+  return txtLines(parseHTML(`<div>${snip}</div>`).body.textContent).slice(1); // first line is "Typ turnaje: A"
+}
+const txtLines = s => String(s || '').split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(l => l && !/^[.\s…-]*$/.test(l));
+const DATE_RE = /\b(\d{1,2})\.\s?(\d{1,2})\.?(?!\s*(?:\+|a\b|-|–|až|lig|\d))/;
+// league numbers a line talks about: "1. a 2.liga", "1.+2. liga", "1.-3. liga", "5. liga", "Liga 3"
+export function leagueNums(line) {
+  const l = nfc(line).replace(new RegExp(DATE_RE.source, 'g'), ' ');
+  const out = new Set(); let m;
+  const re = /((?:\d{1,2}\s*\.\s*(?:(?:a|až|\+|,|-|–|&)\s*)?)+)\s*lig/gi;
+  while ((m = re.exec(l))) {
+    let prev = null, rng = false; const t = /(\d{1,2})\s*\.\s*(a|až|\+|,|-|–|&)?/g; let n;
+    while ((n = t.exec(m[1]))) { const v = +n[1]; if (rng && prev != null) for (let x = prev + 1; x < v; x++) out.add(x); out.add(v); prev = v; rng = /^(-|–|až)$/.test(n[2] || ''); }
+  }
+  const re2 = /\blig[ay]?\s+(?:č\.\s*)?(\d{1,2})\b/gi; while ((m = re2.exec(l))) out.add(+m[1]);
+  return [...out].filter(v => v >= 1 && v <= 12);
+}
+const DAYWORD = /\b(pát(?:ek|ku)|sobot(?:a|u|y)|neděl(?:e|i)|nedele|nedeli)\b/i;
+const SHORTDAY = /(?:^|\s)(Pá|So|Ne)\.?\s+\d{1,2}\.\s?\d{1,2}/;
+function dayOf(line, date) { // -> 'YYYY-MM-DD' or null; date = tournament start date
+  const l = nfc(line);
+  const dm = l.match(DATE_RE);
+  if (dm && (DAYWORD.test(l) || SHORTDAY.test(l) || l.length < 30)) {
+    const y = +date.slice(0, 4), d = `${y}-${String(dm[2]).padStart(2, '0')}-${String(dm[1]).padStart(2, '0')}`;
+    if (d >= addDays(date, -2) && d <= addDays(date, 3)) return d;
+  }
+  const w = (l.match(DAYWORD) || [])[1] || (l.match(SHORTDAY) || [])[1];
+  if (!w) return null;
+  const wd = /^p/i.test(w) ? 5 : /^s/i.test(w) ? 6 : 0;
+  for (let k = -1; k <= 3; k++) { const d = addDays(date, k); if (new Date(d + 'T12:00:00Z').getUTCDay() === wd) return d; }
+  return null;
+}
+const VENUES = ['PBT', 'Braník', 'Strahov', 'Záběhlice', 'Ládví', 'Pankrác', 'Vítkov', 'Kotlářka', 'Pražačka', 'Hagibor', 'Podolí', 'Modřany', 'Radotín', 'Řepy', 'Zbraslav'];
+function times(text) {
+  text = nfc(text).replace(new RegExp(DATE_RE.source, 'g'), d => ' '.repeat(d.length)); // dates are not times
+  const out = []; const re = /(\d{1,2})\s*(?::|h(?=\s*\d{2}\b))\s*(\d{2})|(\d{1,2})\.(\d{2})(?=\s*h)/g; let m;
+  while ((m = re.exec(text))) { if (m[3]) { m[1] = m[3]; m[2] = m[4]; } const h = +m[1], mi = +m[2]; if (h > 23 || mi > 59) continue; const before = text.slice(Math.max(0, m.index - 30), m.index); out.push({ t: `${String(h).padStart(2, '0')}:${m[2]}`, pre: /prezence|registrace/i.test(before.split(/začátek|start|zahájení/i).pop()), start: /(začátek|start|zahájení)[^0-9]{0,20}$/i.test(before) }); }
+  return out;
+}
+export function pvsLeagueWhen(lines, n, date) {
+  const places = lines.filter(l => /^m[ií]sto kon[aá]n[ií]\s*:/i.test(l)).map(l => l.replace(/^m[ií]sto kon[aá]n[ií]\s*:\s*/i, '').trim());
+  const uniqPlaces = [...new Set(places)];
+  let cur = null, day = null, venueKey = null; const src = [], own = [], near = [];
+  const anyDay = lines.some(l => dayOf(l, date));
+  for (let i = 0; i < lines.length; i++) {
+    const ln = lines[i]; const nums = leagueNums(ln); const d = dayOf(ln, date);
+    if (d) cur = d;
+    if (!nums.includes(n)) continue;
+    const block = [ln];
+    if (!times(ln).length) for (let k = i + 1; k < lines.length && block.length < 4; k++) { const x = lines[k]; if (leagueNums(x).length || dayOf(x, date) || x.length > 120 || /:\s*$/.test(x) || /^m[ií]sto kon/i.test(x)) break; block.push(x); }
+    for (const b of block) if (!src.includes(b)) src.push(b);
+    if (!day) day = d || cur;
+    own.push(...times(ln)); near.push(...times(block.slice(1).join(' ')));
+    if (!venueKey) venueKey = VENUES.find(v => new RegExp(`(^|[^\\p{L}])${v}([^\\p{L}]|$)`, 'iu').test(block.join(' ').replace(/prezence v hale/gi, '')));
+  }
+  if (!src.length) return null;
+  const ts = own.length ? own : near;
+  const st = ts.find(x => x.start) || ts.find(x => !x.pre), ci = ts.find(x => x.pre);
+  const start = st ? st.t : null, checkin = ci ? ci.t : null;
+  if (!day && !anyDay) day = date; // no day named anywhere: one-day tournament
+  let venue = null;
+  if (venueKey) {
+    const m = src.join(' ').match(new RegExp(`((?:\\p{Lu}{2,}\\s+){0,2})${venueKey}`, 'iu'));
+    venue = places.find(p => fold(p).includes(fold(venueKey))) || (m ? m[0].trim() : venueKey);
+  }
+  else if (uniqPlaces.length === 1) venue = uniqPlaces[0];
+  const w = { date: day, start, checkin, venue, src };
+  if (!venue && uniqPlaces.length > 1) w.places = uniqPlaces;
+  return w;
 }
 
 // "Němcová, Hnátová" -> team key from the pair list
@@ -150,6 +228,8 @@ export function buildPvsTournament(parsed, url, today) {
       teams = list.map((t, i) => ({ seed: i + 1, key: t.key, p1: t.p1, p2: t.p2, club: t.club, index: t.index, points: t.points }));
     }
     const lg = { name: `Liga ${n}`, teams, official: groups.length ? { groups, playoff } : null };
+    const when = parsed.date && parsed.info ? pvsLeagueWhen(parsed.info, +n, parsed.date) : null;
+    if (when) lg.when = when;
     if (seedNote) lg.seedNote = seedNote;
     leagues.push(lg);
   }
