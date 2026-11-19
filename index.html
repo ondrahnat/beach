@@ -106,6 +106,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,a:focus-visible{ou
 .back{font:inherit;font-size:14px;font-weight:600;color:var(--accent);background:none;border:0;padding:14px 0 0;cursor:pointer}
 .hero{display:grid;gap:6px;padding-block:10px 8px}
 .hero h1{font-size:34px;line-height:1.05;text-transform:uppercase}
+.when{border:1px solid var(--line,#d9dee5);border-radius:12px;padding:10px 14px;display:grid;gap:4px;margin-top:6px;background:var(--card,#fff)}.when .wl{font-size:16px}.when .wl b{font-family:var(--display)}.when .src{font-size:12px;color:var(--muted)}
 .meta{display:flex;flex-wrap:wrap;gap:6px 14px;color:var(--muted);font-size:14px;align-items:center}
 .meta a{color:var(--accent)}
 .toolbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between;padding-block:8px}
@@ -452,7 +453,7 @@ const I18N={
   h2hFill:'Vyberte soupeřku (jméno a příjmení) a zobrazí se vzájemné zápasy.',
   h2hNote:(d,n)=>`Počítá se ze zápasů, které jsou v datech (od ${d}). Pražská beachliga u starších turnajů výsledky jednotlivých zápasů na webu nezveřejňuje, u ${n} turnajů máme jen konečná umístění.`,
   wo:'skreč',
-  leagueN:n=>`${n}. liga`,showAll:n=>`Zobrazit celé pořadí (${n})`,noResult:'umístění zatím nezveřejněno',
+  leagueN:n=>`${n}. liga`,whenTitle:'Kdy a kde hraje',wStart:'začátek',wCheckin:'prezence',wFrom:'Z propozic turnaje',wPlaces:'v propozicích je uvedeno více míst',wNoInfo:'Organizátor zatím nezveřejnil, kdy se která liga hraje.',showAll:n=>`Zobrazit celé pořadí (${n})`,noResult:'umístění zatím nezveřejněno',
   queue:n=>`Ve frontě čeká ${n} turnajů. Jedno kliknutí na Obnovit výsledky načte dalších asi 8.`,
   busy:n=>`Probíhá aktualizace, obvykle 5 až 20 minut. Tlačítko se znovu zapne, až doběhne, a stránka se obnoví sama.`,
   noData:'Data se nepodařilo načíst. Zkus stránku znovu načíst za minutu.',qualif:'Kvalifikace',main:'Hlavní soutěž',stage:'Část',
@@ -491,7 +492,7 @@ const I18N={
   h2hFill:'Choose an opponent (first and last name) to see the matches.',
   h2hNote:(d,n)=>`Counted from the matches in the data (since ${d}). For older tournaments the Prague league site does not publish single match results; for ${n} tournaments we only have final places.`,
   wo:'walkover',
-  leagueN:n=>`League ${n}`,showAll:n=>`Show full standings (${n})`,noResult:'place not published yet',
+  leagueN:n=>`League ${n}`,whenTitle:'When and where',wStart:'start',wCheckin:'check-in',wFrom:'From the tournament notice',wPlaces:'the notice lists more venues',wNoInfo:'The organiser has not published yet when each league plays.',showAll:n=>`Show full standings (${n})`,noResult:'place not published yet',
   queue:n=>`${n} tournaments are queued. One tap on Refresh results loads about 8 more.`,
   busy:n=>`An update is running, usually 5 to 20 minutes. The button turns back on when it finishes and the page reloads by itself.`,
   noData:'The data could not be loaded. Reload the page in a minute.',qualif:'Qualification',main:'Main draw',stage:'Stage',
@@ -582,6 +583,23 @@ function profilesView(){
       <div class="rk">${tbl(T('prof_pvs'),p.pvs,true,p.pvsUrl)}${tbl(T('prof_abv'),(p.abv||[]).filter(r=>!(ABV_EXCLUDE[p.name]||[]).includes(r.code)),false,p.cvfUrl)}</div></article>`};
   return `<div class="profiles">${P.players.map(card).join('')}</div><div class="asof">${T('asOf',fmtDate(P.asOf))}</div>`;
 }
+/* ---- when and where each of the girls' leagues plays (parsed from the PVS notice) ---- */
+const fmtDayLong=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(loc(),{weekday:'long'})}catch{return ''}};
+const fmtDM=d=>{try{return new Date(d+'T12:00:00').toLocaleDateString(loc(),{day:'numeric',month:'numeric'})}catch{return d}};
+function girlLeagues(t){return t.leagues.filter(l=>focusKeys(l).length)}
+function whenList(t){return girlLeagues(t).filter(l=>l.when).map(l=>({l,w:l.when,date:l.when.date||t.date,venue:l.when.venue||(!l.when.places?t.venue:null)}))}
+function whenShort(t,l){const w=l.when;if(!w)return '';const d=w.date||t.date;return [fmtDayLong(d)+' '+fmtDM(d),w.start].filter(Boolean).join(' · ')}
+function whenBox(t){
+  if(t.source!=='pvs'||!girlLeagues(t).length)return '';
+  const W=whenList(t);
+  if(!W.length)return statusOf(t)==='finished'?'':`<div class="when"><span class="eyebrow">${T('whenTitle')}</span><span class="note">${T('wNoInfo')}</span></div>`;
+  const rows=W.map(({l,w,date,venue})=>{
+    const tm=[w.start?`${T('wStart')} ${esc(w.start)}`:'',w.checkin?`${T('wCheckin')} ${esc(w.checkin)}`:''].filter(Boolean).join(', ');
+    const place=venue?esc(venue):w.places?`${esc(t.venue||'')} <small>(${T('wPlaces')}: ${w.places.map(esc).join('; ')})</small>`:'';
+    return `<div class="wl"><b>${esc(l.name)}</b> · ${esc(fmtDayLong(date))} ${esc(fmtDate(date))}${tm?' · '+tm:''}${place?' · '+place:''}</div>
+      <div class="src">${T('wFrom')}: „${w.src.map(esc).join(' / ')}“</div>`}).join('');
+  return `<div class="when"><span class="eyebrow">${T('whenTitle')}</span>${rows}</div>`;
+}
 /* ---- list view ---- */
 function listView(){
   const all=DATA.tournaments;
@@ -608,13 +626,15 @@ function listView(){
         const ln=(lg.name||'').match(/(\d+)/);const lgTxt=t.source==='pvs'&&ln?T('leagueN',ln[1]):(lg.system==='cvf-q18'?T('qualif'):'');
         if(lg.system==='cvf-q18'&&fr&&fr.q)continue;
         if(/kvalifikace/i.test(lg.name||'')&&t.leagues.some(o=>o!==lg&&o.teams.some(x=>x.key===k)))continue;
-        const bits=[lgTxt,fr?placeTxt(fr):''].filter(Boolean).join(' · ');
+        const bits=[lgTxt,!fr&&statusOf(t)!=='finished'?whenShort(t,lg):'',fr?placeTxt(fr):''].filter(Boolean).join(' · ');
         const pend=!fr&&statusOf(t)==='finished'&&lg.teams.length?' · '+T('noResult'):'';
         chips.push(`<span class="pill her chipwrap"><b>${esc(who)}</b>${partner?' + '+esc(partner):''}${bits?' · '+esc(bits):''}${pend}</span>`)}}
     if(!t.leagues.length)chips.push(`<span class="pill">${T('notReg')}</span>`);
     const sx=statusOf(t);const st=sx==='live'?`<span class="pill live">${T('live')}</span>`:sx==='upcoming'?`<span class="pill">${T('upcoming')}</span>`:'';
-    h+=`<button type="button" class="trow" data-id="${esc(t.id)}"><span class="d">${fmtDate(t.date)}<small>${esc(fmtDay(t.date))}</small></span>
-      <span class="n"><b>${esc(t.name)}</b><span>${esc(t.round||'')}${t.round?' · ':''}${esc(t.venue||'')} · ${T('s_'+seriesOf(t))}</span></span>
+    const W=whenList(t).sort((a,b)=>(a.date+(a.w.start||'')).localeCompare(b.date+(b.w.start||'')));const d0=W.length?W[0].date:t.date;
+    const vs=[...new Set(W.map(x=>x.venue).filter(Boolean))];const venueTxt=vs.length===1?vs[0]:(t.venue||'');
+    h+=`<button type="button" class="trow" data-id="${esc(t.id)}"><span class="d">${fmtDate(d0)}<small>${esc(fmtDayLong(d0))}${W.length&&W[0].w.start?' '+esc(W[0].w.start):''}</small></span>
+      <span class="n"><b>${esc(t.name)}</b><span>${esc(t.round||'')}${t.round?' · ':''}${esc(venueTxt)} · ${T('s_'+seriesOf(t))}</span></span>
       <span class="who">${st}${chips.join('')}</span></button>`}
   h+='</div>';
   $('#view').innerHTML=h;
@@ -633,7 +653,7 @@ function detailView(t){
   h+=`<div class="hero"><div class="eyebrow">${[T('s_'+seriesOf(t)),t.round,t.category,...t.leagues.filter(l=>!isCvf(l)&&focusKeys(l).length).map(l=>l.name)].filter(Boolean).map(esc).join(' · ')}</div><h1>${esc(t.name)}</h1>
     <div class="meta"><span>${fmtDate(t.date)}${t.start?', '+esc(t.start):''}</span><span>${esc(t.venue||'')}</span>${t.model?`<span>${esc(t.model)}</span>`:''}
     <a href="${esc(t.url)}" target="_blank" rel="noopener">${T('source')} ↗</a>${t.sheet?`<a href="${esc(t.sheet)}" target="_blank" rel="noopener">${T('sheet')} ↗</a>`:''}</div>
-    <div class="meta">${statusPill}${playersIn(t).map(p=>`<span class="pill her">${esc(FIRST(p))}</span>`).join('')}</div></div>`;
+    <div class="meta">${statusPill}${playersIn(t).map(p=>`<span class="pill her">${esc(FIRST(p))}</span>`).join('')}</div>${whenBox(t)}</div>`;
   if(!league){h+=`<div class="empty"><p class="note">${T('notReg')}</p></div>`;$('#view').innerHTML=h;bindBack();return}
   // her tournament (all stages)
   {const seenK=new Set();for(const p of playersIn(t)){const k=t.leagues.map(l=>l.teams.find(x=>(focusOf(x)||[]).includes(p))).find(Boolean)?.key;if(seenK.has(k))continue;seenK.add(k);h+=herBlock(t,p)}}
