@@ -123,7 +123,8 @@ export function pvsInfoLines(html, parseHTML) {
   let j = html.length; for (const end of ['K zaregistrování', 'Celkem zaregistrováno']) { const k = html.indexOf(end, i); if (k > 0 && k < j) j = k; }
   const lm = html.slice(i).search(/<h2[^>]*>\s*Liga\s+\d/i); if (lm > 0 && i + lm < j) j = i + lm;
   const snip = html.slice(i, j).replace(/\s+/g, ' ').replace(/<br\s*\/?>|<\/(p|div|h\d|li|tr)>/gi, '\n');
-  return txtLines(parseHTML(`<div>${snip}</div>`).body.textContent).slice(1); // first line is "Typ turnaje: A"
+  const doc = parseHTML(`<!doctype html><html><head></head><body><div>${snip}</div></body></html>`);
+  return txtLines((doc.body || doc.documentElement).textContent).slice(1); // first line is "Typ turnaje: A"
 }
 const txtLines = s => String(s || '').split('\n').map(l => l.replace(/\s+/g, ' ').trim()).filter(l => l && !/^[.\s…-]*$/.test(l));
 const DATE_RE = /\b(\d{1,2})\.\s?(\d{1,2})\.?(?!\s*(?:\+|a\b|-|–|až|lig|\d))/;
