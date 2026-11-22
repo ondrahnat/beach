@@ -246,7 +246,7 @@ if (HISTORY) {
   discovered.push(...await pvsHistory(known, data), ...await cvfHistory(known));
 }
 for (const n of discovered) if (!known.has(n.id)) { data.tournaments.push(n); known.add(n.id); }
-for (const t of data.tournaments) t.status = L.statusFor(t.date, today);
+for (const t of data.tournaments) t.status = L.tStatus(t, today);
 try { data.profiles = await rankings(data.profiles); } catch (e) { log('  ! rankings failed: ' + e.message); }
 
 const errs = L.validate(data, removed.length ? null : prev);

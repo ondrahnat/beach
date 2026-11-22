@@ -34,6 +34,12 @@ export function pragueIso(d = new Date()) {
   return `${parts.year}-${parts.month}-${parts.day}T${parts.hour === '24' ? '00' : parts.hour}:${parts.minute}:${parts.second}${off}`;
 }
 export const statusFor = (date, today) => date < today ? 'finished' : date === today ? 'live' : 'upcoming';
+// status from the days the girls' leagues actually play (PVS notice), else from the tournament date
+export function tStatus(t, today) {
+  const ds = (t.leagues || []).map(l => l.when && l.when.date).filter(Boolean).sort();
+  if (!ds.length) return statusFor(t.date, today);
+  return today < ds[0] ? 'upcoming' : today > ds[ds.length - 1] ? 'finished' : 'live';
+}
 function catNorm(c) { // "U12Z" -> "U12Ž", "U16 ženy" -> "U16Ž"
   c = nfc(c).trim();
   let m = c.match(/^(U\d{2})\s*(ženy|dívky|Ž|Z)$/i); if (m) return m[1].toUpperCase() + 'Ž';
@@ -235,13 +241,15 @@ export function buildPvsTournament(parsed, url, today) {
     leagues.push(lg);
   }
   const series = parsed.letni ? 'leto' : 'pbl';
-  return {
+  const t = {
     id: `pvs-${parsed.id}`, source: 'pvs', series, url,
     name: `${series === 'leto' ? 'Letní beachliga' : 'Pražská beachliga'} ${parsed.category}`,
     round: series === 'pbl' && parsed.kolo ? `${parsed.kolo}. kolo ${seasonOf(parsed.date)}` : null,
     category: parsed.category, date: parsed.date, start: parsed.start, venue: parsed.venue,
     status: statusFor(parsed.date, today), system: 'pvs', teamsTotal: parsed.total, leagues
   };
+  t.status = tStatus(t, today);
+  return t;
 }
 
 // Upcoming list on /beach/ : rows [Název, Začátek, Registrace do, Kategorie, Počet týmů, Místo, Detail]
