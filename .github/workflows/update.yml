@@ -32,6 +32,8 @@ jobs:
       url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          ref: main   # vždy nejnovější verze (i když mezitím někdo nahrál soubory nebo jiný běh uložil data)
 
       - uses: actions/setup-node@v4
         with:
@@ -50,7 +52,12 @@ jobs:
           git config user.email "41898341+github-actions[bot]@users.noreply.github.com"
           git add data.json
           git commit -m "data: aktualizace $(TZ=Europe/Prague date '+%Y-%m-%d %H:%M')"
-          git pull --rebase --autostash
+          if ! git pull --rebase --autostash; then
+            git rebase --abort || true
+            git reset --hard origin/main
+            echo "Data mezitím uložil jiný běh, tato se přeskočí (další běh je obnoví)"
+            exit 0
+          fi
           git push
 
       - name: Připravit web
