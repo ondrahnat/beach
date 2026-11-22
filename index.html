@@ -521,7 +521,10 @@ function seasonOf(t){const d=new Date(t.date+'T12:00:00');if(seriesOf(t)==='pbl'
 function catOf(t){return (t.category||'').replace('Ž','').replace('Z','')}
 function playersIn(t){const out=new Set();for(const l of t.leagues)for(const tm of l.teams)for(const p of (focusOf(tm)||[]))out.add(p);return [...out]}
 const isCvf=l=>(l.system||'').startsWith('cvf-');
-function statusOf(t){const today=new Date().toISOString().slice(0,10);if(t.date<today&&t.status!=='upcoming')return 'finished';if(t.date<today&&t.status==='upcoming'&&t.leagues&&t.leagues.length)return 'finished';return t.status}
+// status from the days the girls' leagues actually play (a league can play on Sunday of a tournament dated Saturday)
+function playDays(t){const ds=(t.leagues||[]).filter(l=>l.when&&l.when.date&&focusKeys(l).length).map(l=>l.when.date);return ds.length?ds.sort():[t.date]}
+function statusOf(t){const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Prague'});const ds=playDays(t);
+  if(today<ds[0])return 'upcoming';if(today>ds[ds.length-1])return 'finished';return 'live'}
 
 /* ---- build a league model (PVS or ČVS) ---- */
 function buildPvs(t,league,forceProj){
@@ -608,8 +611,8 @@ function listView(){
   const seasons=[...new Set(all.map(seasonOf))].sort().reverse();
   const players=DATA.players;
   const pass=t=>(F.player==='all'||playersIn(t).includes(F.player))&&(F.series==='all'||seriesOf(t)===F.series)&&(F.cat==='all'||catOf(t)===F.cat)&&(F.season==='all'||seasonOf(t)===F.season);
-  const today=new Date().toISOString().slice(0,10);
-  const list=all.filter(pass).sort((a,b)=>{const ua=a.date>=today,ub=b.date>=today;if(ua!==ub)return ua?-1:1;return ua?a.date.localeCompare(b.date):b.date.localeCompare(a.date)});
+  const today=new Date().toLocaleDateString('en-CA',{timeZone:'Europe/Prague'});
+  const lastDay=t=>{const d=playDays(t);return d[d.length-1]};const list=all.filter(pass).sort((a,b)=>{const ua=lastDay(a)>=today,ub=lastDay(b)>=today;if(ua!==ub)return ua?-1:1;return ua?lastDay(a).localeCompare(lastDay(b)):lastDay(b).localeCompare(lastDay(a))});
   let h=profilesView()+navTabs('list')+`<div class="filters">
     <label><span class="eyebrow">${T('player')}</span><select id="fPlayer">${opts([['all',players.length===2?T('both'):T('all')],...players.map(p=>[p,p])],F.player)}</select></label>
     <label><span class="eyebrow">${T('series')}</span><select id="fSeries">${opts([['all',T('all')],['pbl',T('s_pbl')],['leto',T('s_leto')],['abv',T('s_abv')]],F.series)}</select></label>
