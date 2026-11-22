@@ -24,12 +24,12 @@ concurrency:
 
 jobs:
   update:
-    if: ${{ !github.event.repository.is_template }}   # šablona sama nic nestahuje
+    if: ${{ github.repository != 'ondrahnat/beach-sablona' }}   # šablona sama nic nestahuje
     runs-on: ubuntu-latest
     timeout-minutes: 60
     environment:
       name: github-pages
-      url: ${{ steps.deploy.outputs.page_url }}
+      url: ${{ steps.deploy.outputs.page_url || steps.deploy2.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
 
@@ -64,5 +64,14 @@ jobs:
       - uses: actions/upload-pages-artifact@v3
         with:
           path: _site
+      # GitHub občas napoprvé nenajde právě nahraný balíček webu ("No artifacts named github-pages"),
+      # proto se zveřejnění při chybě po 30 s zkusí ještě jednou
       - id: deploy
+        continue-on-error: true
+        uses: actions/deploy-pages@v4
+      - name: Počkat a zkusit zveřejnit znovu
+        if: steps.deploy.outcome == 'failure'
+        run: sleep 30
+      - id: deploy2
+        if: steps.deploy.outcome == 'failure'
         uses: actions/deploy-pages@v4
